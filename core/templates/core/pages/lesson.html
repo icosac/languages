@@ -1,0 +1,116 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lumina Lexicon | Lesson Articles{% endblock %}
+{% block site_nav %}{% endblock %}
+{% block body_class %}bg-surface{% endblock %}
+{% block main_class %}w-full px-0 py-0{% endblock %}
+
+{% block content %}
+<header class="fixed left-0 right-0 top-0 z-40 bg-surface/90 backdrop-blur-md">
+  <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 md:px-10">
+    <div class="flex flex-1 items-center gap-3">
+      <a href="{{ dashboard_url }}" class="inline-flex items-center gap-2 rounded-lg bg-surface-container-low px-3 py-2 text-sm font-semibold text-on-surface-variant hover:text-primary">
+        <span class="material-symbols-outlined text-base">dashboard</span>
+        <span class="hidden sm:inline">Dashboard</span>
+      </a>
+      <a href="{{ lectures_url }}" class="inline-flex items-center gap-2 rounded-lg bg-surface-container-low px-3 py-2 text-sm font-semibold text-on-surface-variant hover:text-primary">
+        <span class="material-symbols-outlined text-base">arrow_back</span>
+        <span class="hidden sm:inline">Back to {{ lectures_label }}</span>
+        <span class="sm:hidden">Lectures</span>
+      </a>
+      <div class="ml-1 w-full max-w-md">
+        {% include 'core/components/progress_bar.html' with label='Current Lesson' value=progress %}
+      </div>
+    </div>
+    <div class="rounded-xl bg-surface-container-low px-4 py-2 font-label text-sm text-on-surface-variant"><span class="material-symbols-outlined mr-1 align-middle text-primary">psychology</span>420 XP</div>
+  </div>
+</header>
+
+<div class="mx-auto max-w-4xl px-6 pt-20">
+  <section class="mb-20 ml-4 md:ml-10">
+    <h1 class="mb-4 font-display text-5xl font-extrabold tracking-tight">{{ lesson_title }}</h1>
+    <p class="max-w-2xl text-xl leading-relaxed text-on-surface-variant">{{ lesson_intro }}</p>
+  </section>
+
+  <section class="mb-24 grid grid-cols-1 gap-6 md:grid-cols-12">
+    <div class="rounded-xl bg-surface-container-lowest p-10 editorial-shadow md:col-span-8">
+      <div class="mb-6 flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary">menu_book</span>
+        <h2 class="font-display text-2xl font-bold">Definite Articles</h2>
+      </div>
+      <p class="mb-8 leading-relaxed text-on-surface-variant">German uses <span class="font-bold text-primary">Der</span>, <span class="font-bold text-primary">Die</span>, and <span class="font-bold text-primary">Das</span>. Learn article and noun together for stronger recall.</p>
+      <div class="space-y-4">
+        <div class="rounded-lg bg-surface-container-low p-5">
+          <p class="text-3xl font-bold text-primary">Der</p>
+          <p class="font-semibold">Masculine</p>
+          <p class="text-sm text-on-surface-variant">Der Mann (The man)</p>
+        </div>
+        <div class="rounded-lg bg-surface-container-low p-5">
+          <p class="text-3xl font-bold text-primary">Die</p>
+          <p class="font-semibold">Feminine</p>
+          <p class="text-sm text-on-surface-variant">Die Frau (The woman)</p>
+        </div>
+        <div class="rounded-lg bg-surface-container-low p-5">
+          <p class="text-3xl font-bold text-primary">Das</p>
+          <p class="font-semibold">Neuter</p>
+          <p class="text-sm text-on-surface-variant">Das Kind (The child)</p>
+        </div>
+      </div>
+    </div>
+    <aside class="rounded-xl bg-tertiary-container p-8 md:col-span-4">
+      <span class="material-symbols-outlined mb-6 text-4xl text-tertiary">lightbulb</span>
+      <h3 class="mb-4 font-display text-xl font-bold text-on-tertiary-container">Mindful Tip</h3>
+      <p class="text-sm italic leading-relaxed text-on-tertiary-container">Always learn the article together with the noun. Do not isolate vocabulary from its article.</p>
+      <div class="mt-8 border-t border-on-tertiary-container/10 pt-5">
+        <p class="font-label text-xs uppercase tracking-widest text-on-tertiary-container/60">Study Time</p>
+        <p class="font-bold text-on-tertiary-container">~12 minutes</p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="mb-24">
+    <h2 class="mb-8 ml-4 font-display text-2xl font-bold md:ml-10">Essential Vocabulary</h2>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="flex items-center justify-between rounded-xl bg-surface-container-low p-6"><div><p class="font-label text-[10px] uppercase tracking-widest text-outline-variant">Masculine</p><p class="text-lg font-semibold">Der Tisch</p><p class="text-sm text-on-surface-variant">The Table</p></div><span class="material-symbols-outlined text-outline-variant/40">volume_up</span></div>
+      <div class="flex items-center justify-between rounded-xl bg-surface-container-low p-6"><div><p class="font-label text-[10px] uppercase tracking-widest text-outline-variant">Feminine</p><p class="text-lg font-semibold">Die Tür</p><p class="text-sm text-on-surface-variant">The Door</p></div><span class="material-symbols-outlined text-outline-variant/40">volume_up</span></div>
+      <div class="flex items-center justify-between rounded-xl bg-surface-container-low p-6"><div><p class="font-label text-[10px] uppercase tracking-widest text-outline-variant">Neuter</p><p class="text-lg font-semibold">Das Fenster</p><p class="text-sm text-on-surface-variant">The Window</p></div><span class="material-symbols-outlined text-outline-variant/40">volume_up</span></div>
+      <div class="flex items-center justify-between rounded-xl bg-surface-container-low p-6"><div><p class="font-label text-[10px] uppercase tracking-widest text-outline-variant">Masculine</p><p class="text-lg font-semibold">Der Stuhl</p><p class="text-sm text-on-surface-variant">The Chair</p></div><span class="material-symbols-outlined text-outline-variant/40">volume_up</span></div>
+    </div>
+  </section>
+
+  <section class="mb-24 rounded-2xl bg-surface-container-low/50 p-12">
+    <div class="mx-auto mb-12 max-w-xl text-center">
+      <span class="mb-4 inline-block rounded-full bg-primary-container px-3 py-1 text-xs font-bold text-on-primary-container">PRACTICE</span>
+      <h2 class="mb-3 font-display text-3xl font-bold">Test your intuition</h2>
+      <p class="italic text-on-surface-variant">Select the correct article for the object shown below.</p>
+    </div>
+    <div class="mx-auto max-w-md">
+      <div class="mb-8 aspect-video overflow-hidden rounded-2xl bg-surface-container">
+        <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1200&q=80" alt="book on desk" class="h-full w-full object-cover">
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <button class="rounded-xl bg-surface-container-lowest py-4 font-bold text-primary">Der</button>
+        <button class="rounded-xl bg-surface-container-lowest py-4 font-bold text-primary">Die</button>
+        <button class="rounded-xl bg-primary-container/30 py-4 font-bold text-primary">Das</button>
+      </div>
+      <p class="mt-6 text-center text-xs text-outline-variant">"Das Buch" is neuter. Correct.</p>
+    </div>
+  </section>
+
+  <div class="flex flex-col items-center gap-5">
+    <button class="w-full max-w-lg rounded-xl bg-primary-gradient py-6 text-xl font-bold text-white">Mark as Complete</button>
+    <button class="font-label text-sm text-outline-variant">Restart Lesson</button>
+  </div>
+</div>
+
+<footer class="mt-24 w-full border-t border-outline-variant/15 bg-surface py-10">
+  <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row md:px-10">
+    <p class="font-label text-xs uppercase tracking-widest text-outline-variant">© 2026 Enrico Saccon</p>
+    <div class="flex gap-8 font-label text-xs uppercase tracking-widest text-outline-variant">
+      <a href="#">Privacy</a>
+      <a href="#">Institutional</a>
+      <a href="#">Support</a>
+    </div>
+  </div>
+</footer>
+{% endblock %}

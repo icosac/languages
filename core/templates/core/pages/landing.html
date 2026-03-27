@@ -1,0 +1,109 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lumina Lexicon | Landing{% endblock %}
+{% block body_class %}bg-surface{% endblock %}
+{% block main_class %}w-full px-0 py-0{% endblock %}
+
+{% block content %}
+<section class="pb-28 pt-14">
+  <div class="mx-auto grid max-w-7xl items-center gap-16 px-6 lg:grid-cols-2 lg:gap-20 md:px-10">
+    <div class="max-w-xl">
+      <span class="mb-6 block font-label text-xs font-medium uppercase tracking-[0.26em] text-primary">The silent atelier of learning</span>
+      <h1 class="mb-8 font-display text-5xl font-extrabold leading-[1.06] text-on-surface md:text-6xl">Learn a language<br>step by step</h1>
+      <p class="mb-10 text-lg leading-relaxed text-on-surface-variant">Experience a structured progression. No noise, no distractions, just the quiet clarity of language practice.</p>
+      <div class="flex flex-wrap gap-4">
+        <a href="/register/" class="rounded-xl bg-primary-gradient px-10 py-4 font-label text-sm font-bold text-white">Get started</a>
+        <a href="/login/" class="rounded-xl bg-secondary-container px-10 py-4 font-label text-sm font-bold text-on-secondary-container">Log in</a>
+      </div>
+    </div>
+    <div class="relative">
+      <div class="aspect-square w-full overflow-hidden rounded-[2rem] bg-surface-container-low">
+        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80" alt="Minimal study desk" class="h-full w-full object-cover opacity-85">
+      </div>
+      <div class="glass-card editorial-shadow absolute -bottom-6 -left-8 max-w-xs rounded-2xl p-6">
+        <div class="mb-3 flex items-center gap-3">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-fixed">
+            <span class="material-symbols-outlined text-sm text-primary" style="font-variation-settings:'FILL' 1">psychology</span>
+          </span>
+          <span class="font-label text-xs font-semibold uppercase tracking-wider text-primary">Word of the day</span>
+        </div>
+        <h3 class="text-2xl font-bold text-on-surface">Fernweh</h3>
+        <p class="mb-3 text-xs italic text-on-surface-variant">Noun / fearn-vey</p>
+        <p class="text-sm leading-relaxed text-on-surface-variant">A longing for far-off places; the opposite of homesickness.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bg-surface-container py-24 md:py-28">
+  <div class="mx-auto max-w-7xl px-6 md:px-10">
+  <div class="mb-16 max-w-2xl">
+    <h2 class="mb-4 font-display text-4xl font-extrabold text-on-surface">A Path of Mastery</h2>
+    <p class="text-on-surface-variant">Our curriculum follows CEFR progression with a quiet editorial structure.</p>
+  </div>
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
+    <article class="md:col-span-2 rounded-[2rem] bg-surface-container-lowest p-10">
+      <div class="mb-10 flex items-start justify-between">
+        <span class="font-display text-5xl font-extrabold text-surface-container-highest">A1</span>
+        <span class="material-symbols-outlined text-4xl text-primary-fixed-dim">grid_view</span>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold">Foundation</h3>
+      <p class="mb-8 text-sm leading-relaxed text-on-surface-variant">Begin your journey with essential syntax and everyday lexicon.</p>
+      <a href="/course-path/" class="inline-flex items-center gap-2 text-sm font-bold text-primary">View curriculum <span class="material-symbols-outlined text-base">arrow_forward</span></a>
+    </article>
+
+    {% for level in levels %}
+      <article class="rounded-[2rem] {% if level.status == 'locked' %}bg-surface-container-high{% else %}bg-surface-container-lowest{% endif %} p-10">
+        <div class="mb-10 flex items-start justify-between">
+          <span class="font-display text-5xl font-extrabold text-surface-container-highest">{{ level.code }}</span>
+          <span class="material-symbols-outlined text-4xl text-primary-fixed-dim">{% if level.status == 'locked' %}lock{% else %}menu_book{% endif %}</span>
+        </div>
+        <h3 class="mb-1 text-xl font-bold">{{ level.title }}</h3>
+        <p class="text-sm text-on-surface-variant">{{ level.description }}</p>
+      </article>
+    {% endfor %}
+
+    <article class="md:col-span-3 flex items-center gap-8 rounded-[2rem] bg-surface-container-high p-10">
+      <div class="flex-1">
+        <h3 class="mb-3 text-2xl font-bold">Spaced Repetition Redefined</h3>
+        <p class="text-sm leading-relaxed text-on-surface-variant">Our silent recall approach reinforces weak points without gamified pressure.</p>
+      </div>
+      <div class="hidden h-32 w-44 rounded-xl bg-white/40 p-4 lg:block">
+        <div class="mb-2 flex gap-2">
+          <div class="h-2 w-full rounded-full bg-primary/20"></div>
+          <div class="h-2 w-1/2 rounded-full bg-primary/20"></div>
+        </div>
+        <div class="mb-4 h-2 w-3/4 rounded-full bg-primary"></div>
+        <div class="grid grid-cols-4 gap-2">
+          <div class="h-8 rounded-lg bg-primary-container"></div>
+          <div class="h-8 rounded-lg bg-surface-container-highest"></div>
+          <div class="h-8 rounded-lg bg-surface-container-highest"></div>
+          <div class="h-8 rounded-lg bg-surface-container-highest"></div>
+        </div>
+      </div>
+    </article>
+  </div>
+  </div>
+</section>
+
+<section class="py-24 text-center md:py-28">
+  <div class="mx-auto max-w-2xl px-6 md:px-10">
+    <h2 class="mb-6 font-display text-4xl font-extrabold">Ready for the first step?</h2>
+    <p class="mb-10 text-on-surface-variant">Join a community of focused scholars. No streaks, no noise, just progress.</p>
+    <div class="flex flex-col justify-center gap-4 sm:flex-row">
+      <input type="email" placeholder="Email address" class="min-w-[290px] rounded-xl bg-surface-container-low px-6 py-4">
+      <button class="rounded-xl bg-primary px-10 py-4 font-bold text-white">Start Learning</button>
+    </div>
+  </div>
+</section>
+
+<footer class="border-t border-outline-variant/15 bg-surface py-10">
+  <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row md:px-10">
+    <div class="flex gap-8 font-label text-xs uppercase tracking-widest text-outline-variant">
+      <a href="#">Imprint</a>
+      <a href="#">Privacy</a>
+      <a href="#">Support</a>
+    </div>
+  </div>
+</footer>
+{% endblock %}

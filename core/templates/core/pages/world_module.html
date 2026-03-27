@@ -1,0 +1,479 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Lumina Lexicon | Countries & Nationalities{% endblock %}
+{% block site_nav %}{% endblock %}
+{% block body_class %}bg-surface{% endblock %}
+{% block main_class %}w-full px-0 py-0 pb-24 md:pb-0{% endblock %}
+{% block extra_head %}
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  >
+  <style>
+    #world-map {
+      height: 520px;
+      width: 100%;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    #world-map .leaflet-container {
+      background: #f2f4f7;
+      font-family: Manrope, sans-serif;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md">
+  <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 md:px-10">
+    <a href="/" class="font-display text-2xl font-extrabold tracking-tight text-on-surface">Lumina Lexicon</a>
+    <nav class="hidden items-center gap-8 md:flex">
+      <a href="/dashboard/" class="font-body text-sm text-on-surface-variant hover:text-primary">Library</a>
+      <a href="/vocabulary/lexicon/" class="font-body text-sm text-on-surface-variant hover:text-primary">Lexicon</a>
+      <a href="/course-path/" class="font-body text-sm text-on-surface-variant hover:text-primary">Insights</a>
+      <a href="/lesson/world/" class="border-b-2 border-primary pb-1 font-body text-sm font-semibold text-primary">Practice</a>
+    </nav>
+    <a href="/profile/" class="inline-flex items-center gap-1 rounded-panel px-2 py-1 text-on-surface-variant hover:bg-surface-container-low hover:text-primary">
+      <span class="material-symbols-outlined">account_circle</span>
+    </a>
+  </div>
+</header>
+
+<div class="md:ml-64">
+  <aside class="fixed left-0 top-0 hidden h-screen w-64 bg-surface-container-low px-6 py-8 md:flex" style="flex-direction: column;">
+    <div class="mb-12 pr-4">
+      <h1 class="font-display text-xl font-bold tracking-tight text-on-surface">Lumina Lexicon</h1>
+      <p class="mt-1 font-label text-xs uppercase tracking-widest text-on-surface-variant">Academic Excellence</p>
+    </div>
+    <nav class="flex flex-1 flex-col gap-2 pr-4">
+      <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="/dashboard/">
+        <span class="material-symbols-outlined">local_library</span>
+        Library
+      </a>
+      <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="/vocabulary/lexicon/">
+        <span class="material-symbols-outlined">menu_book</span>
+        Lexicon
+      </a>
+      <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="/course-path/">
+        <span class="material-symbols-outlined">insights</span>
+        Insights
+      </a>
+      <a class="flex translate-x-1 items-center gap-4 rounded-l-full bg-surface-container-lowest px-4 py-3 text-sm font-semibold text-primary shadow-soft" href="/lesson/world/">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">public</span>
+        Practice
+      </a>
+      <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="/profile/">
+        <span class="material-symbols-outlined">settings</span>
+        Settings
+      </a>
+    </nav>
+  </aside>
+
+  <main class="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
+    {% if messages %}
+      <div class="mb-8 space-y-2">
+        {% for message in messages %}
+          <div class="rounded-panel bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <section class="mb-12">
+      <nav class="mb-4 flex items-center gap-2 text-xs font-label text-on-surface-variant">
+        <span>A1.1 Level</span>
+        <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+        <a href="/level/a1-1/" class="hover:text-primary">Vocabulary</a>
+        <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+        <span class="font-semibold text-primary">Countries &amp; Nationalities</span>
+      </nav>
+      <h1 class="mb-2 font-display text-4xl font-extrabold tracking-tight text-on-surface">Länder und Nationalitäten</h1>
+      <p class="max-w-2xl leading-relaxed text-on-surface-variant">Expand your global vocabulary. Learn the names of nations, their corresponding nationalities, and the languages spoken within them.</p>
+    </section>
+
+    <div class="mb-10 max-w-md">
+      <div class="mb-2 flex items-end justify-between">
+        <span class="text-xs font-label uppercase tracking-widest text-on-surface-variant">{{ active_continent.label }} Progression</span>
+        <span class="text-sm font-bold text-primary">{{ continent_progress_percent }}%</span>
+      </div>
+      <div class="h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
+        <div class="h-full rounded-full bg-primary transition-all duration-700" style="width: {{ continent_progress_percent }}%"></div>
+      </div>
+      <p class="mt-2 text-xs text-on-surface-variant">{{ continent_completed }} of {{ continent_total }} countries completed</p>
+    </div>
+
+    <div class="mb-8 flex flex-wrap gap-3">
+      {% for continent in continent_tabs %}
+        <a href="?continent={{ continent.slug }}" class="rounded-full px-6 py-2 text-sm tracking-tight transition {% if continent.is_active %}bg-primary text-white shadow-soft{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high{% endif %}">
+          {{ continent.label }}
+        </a>
+      {% endfor %}
+    </div>
+
+    <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+      <section class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-8 editorial-shadow lg:col-span-8">
+        <div class="absolute right-1 top-1 z-10">
+          <span class="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">Interactive Map</span>
+        </div>
+        <div id="world-map" role="img" aria-label="Interactive {{ active_continent.english_label }} map"></div>
+        <div class="mt-6 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-label text-on-surface-variant">CURRENT TARGET</p>
+            <p id="selected-country-label" class="font-display text-lg font-bold text-on-surface">{{ active_country.nation_answers.0 }} ({{ active_country.name }})</p>
+          </div>
+          <div class="text-xs text-on-surface-variant">
+            <p id="selected-country-attempts">Attempts: {{ active_country_attempts }}</p>
+            <p id="selected-country-score">Last score: {{ active_country_last_score }}/3</p>
+            <button id="open-country-form" type="button" class="mt-2 rounded-lg bg-primary-gradient px-4 py-2 font-semibold text-white hover:opacity-90">Open Form</button>
+          </div>
+        </div>
+
+        <div id="country-form-overlay" class="{% if evaluation.submitted %}absolute{% else %}hidden absolute{% endif %}" style="top: 0; left: 0; right: 0; bottom: 0; background: rgba(45, 51, 56, 0.18);">
+          <div class="flex h-full w-full items-center justify-center p-6">
+            <div class="w-full max-w-md rounded-xl bg-surface-container-lowest p-8 editorial-shadow">
+              <div class="mb-6 flex items-center justify-between">
+                <h2 class="font-display text-xl font-bold">Details ergänzen</h2>
+                <button id="close-country-form" type="button" class="rounded-lg bg-surface-container-low px-3 py-1 text-on-surface-variant hover:text-primary">Close</button>
+              </div>
+
+              <p id="overlay-country-subtitle" class="mb-6 text-sm text-on-surface-variant">Fill in nation, nationality, and language for the selected country.</p>
+
+              <form id="country-form" method="post" class="space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="continent" id="overlay-continent-input" value="{{ active_continent.slug }}">
+                <input type="hidden" name="country" id="overlay-country-input" value="{{ active_country.code }}">
+
+                <div>
+                  <label class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Das Land (The Nation)</label>
+                  <div class="relative">
+                    <input
+                      id="overlay-nation-input"
+                      name="nation"
+                      value="{{ submitted_values.nation }}"
+                      class="w-full rounded-lg bg-surface-container-low px-4 py-3 font-medium text-on-surface transition focus:ring-2 focus:ring-primary/20"
+                      placeholder="z. B. {{ active_country.nation_answers.0 }}"
+                      type="text"
+                      autocomplete="off"
+                    >
+                    {% if evaluation.submitted and evaluation.nation_correct %}
+                      <span class="material-symbols-outlined absolute right-1 top-1 text-primary text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
+                    {% endif %}
+                  </div>
+                  {% if evaluation.submitted and not evaluation.nation_correct %}
+                    <p class="mt-2 text-xs text-on-surface-variant">Expected: {{ active_country.nation_answers|join:" / " }}</p>
+                  {% endif %}
+                </div>
+
+                <div>
+                  <label class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Die Nationalität (The Nationality)</label>
+                  <div class="relative">
+                    <input
+                      id="overlay-nationality-input"
+                      name="nationality"
+                      value="{{ submitted_values.nationality }}"
+                      class="w-full rounded-lg bg-surface-container-low px-4 py-3 font-medium text-on-surface transition focus:ring-2 focus:ring-primary/20"
+                      placeholder="z. B. {{ active_country.nationality_answers.0 }}"
+                      type="text"
+                      autocomplete="off"
+                    >
+                    {% if evaluation.submitted and evaluation.nationality_correct %}
+                      <span class="material-symbols-outlined absolute right-1 top-1 text-primary text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
+                    {% endif %}
+                  </div>
+                  {% if evaluation.submitted and not evaluation.nationality_correct %}
+                    <p class="mt-2 text-xs text-on-surface-variant">Expected: {{ active_country.nationality_answers|join:" / " }}</p>
+                  {% endif %}
+                </div>
+
+                <div>
+                  <label class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Die Sprache (The Language)</label>
+                  <div class="relative">
+                    <input
+                      id="overlay-language-input"
+                      name="language"
+                      value="{{ submitted_values.language }}"
+                      class="w-full rounded-lg bg-surface-container-low px-4 py-3 font-medium text-on-surface transition focus:ring-2 focus:ring-primary/20"
+                      placeholder="z. B. {{ active_country.language_answers.0 }}"
+                      type="text"
+                      autocomplete="off"
+                    >
+                    {% if evaluation.submitted and evaluation.language_correct %}
+                      <span class="material-symbols-outlined absolute right-1 top-1 text-primary text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
+                    {% endif %}
+                  </div>
+                  {% if evaluation.submitted and not evaluation.language_correct %}
+                    <p class="mt-2 text-xs text-on-surface-variant">Expected: {{ active_country.language_answers|join:" / " }}</p>
+                  {% endif %}
+                </div>
+
+                <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-gradient py-4 font-bold text-white shadow-soft hover:opacity-90">
+                  <span>Submit Answers</span>
+                  <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="flex flex-col gap-6 lg:col-span-4">
+        <div class="rounded-xl bg-surface-container-lowest p-8 editorial-shadow">
+          <div class="mb-6">
+            <h2 class="mb-2 font-display text-xl font-bold">How to use</h2>
+            <p class="text-sm leading-relaxed text-on-surface-variant">Click a highlighted country on the real map. The form opens as an overlay where you enter nation, nationality, and language.</p>
+          </div>
+          <ul class="space-y-2 text-sm text-on-surface-variant">
+            <li>1. Pick a continent.</li>
+            <li>2. Click one of its highlighted countries.</li>
+            <li>3. Submit all three answers in the overlay form.</li>
+          </ul>
+        </div>
+
+        <div class="glass-panel rounded-xl p-6">
+          <div class="flex items-start gap-4">
+            <div class="rounded-lg bg-primary-container p-2 text-on-primary-container">
+              <span class="material-symbols-outlined">lightbulb</span>
+            </div>
+            <div>
+              <h3 class="mb-1 text-sm font-bold">Mindful Tip</h3>
+              <p class="text-xs leading-relaxed text-on-surface-variant">German nationality nouns often change by gender. Example: <span class="italic">Deutscher</span> and <span class="italic">Deutsche</span>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="mt-16">
+      <div class="mb-8 flex items-end justify-between">
+        <h3 class="font-display text-2xl font-bold">Zuletzt gelernt</h3>
+        <a href="/vocabulary/lexicon/" class="flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+          See Lexicon
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+        </a>
+      </div>
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+        {% for item in recently_learned %}
+          <div class="{% if item.code == active_country.code %}border-l-4 border-primary bg-surface-container-low{% else %}bg-surface-container-lowest {% if item.code not in mastered_codes %}opacity-60{% endif %}{% endif %} rounded-xl p-5 {% if item.code == active_country.code or item.code in mastered_codes %}editorial-shadow{% endif %}">
+            <p class="mb-1 text-[10px] font-label uppercase tracking-widest text-on-surface-variant">{{ item.name }}</p>
+            <p class="font-bold text-on-surface">{{ item.nation_answers.0 }}</p>
+            <p class="mt-2 text-xs text-on-surface-variant">{{ item.language_answers.0 }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+
+  {{ countries|json_script:"world-country-data" }}
+  {{ mastered_codes|json_script:"world-mastered-codes" }}
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script>
+    (function () {
+      const overlay = document.getElementById("country-form-overlay");
+      const openButton = document.getElementById("open-country-form");
+      const closeButton = document.getElementById("close-country-form");
+      const selectedCountryLabel = document.getElementById("selected-country-label");
+      const selectedCountryAttempts = document.getElementById("selected-country-attempts");
+      const selectedCountryScore = document.getElementById("selected-country-score");
+      const overlayCountryInput = document.getElementById("overlay-country-input");
+      const overlayContinentInput = document.getElementById("overlay-continent-input");
+      const nationInput = document.getElementById("overlay-nation-input");
+      const nationalityInput = document.getElementById("overlay-nationality-input");
+      const languageInput = document.getElementById("overlay-language-input");
+      const subtitle = document.getElementById("overlay-country-subtitle");
+
+      if (!overlay || typeof L === "undefined") {
+        return;
+      }
+
+      const evaluationSubmitted = {{ evaluation.submitted|yesno:"true,false" }};
+      const activeContinent = "{{ active_continent.slug }}";
+      const activeCountryCode = "{{ active_country.code }}";
+      const mapDataUrl = "{% static 'core/data/world.geo.json' %}";
+      const countries = JSON.parse(document.getElementById("world-country-data").textContent);
+      const masteredCodes = new Set(JSON.parse(document.getElementById("world-mastered-codes").textContent));
+      const countriesByCode = {};
+      const geoNameToCode = {};
+
+      function normalize(value) {
+        return (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9\\s]/g, " ")
+          .replace(/\\s+/g, " ")
+          .trim();
+      }
+
+      countries.forEach((country) => {
+        countriesByCode[country.code] = country;
+        const aliases = [country.name, ...(country.geo_names || [])];
+        aliases.forEach((alias) => {
+          const normalizedAlias = normalize(alias);
+          if (normalizedAlias) {
+            geoNameToCode[normalizedAlias] = country.code;
+          }
+        });
+      });
+
+      let selectedCode = activeCountryCode;
+      let geoJsonLayer = null;
+
+      function updateSelectionText(code) {
+        const country = countriesByCode[code];
+        if (!country || !selectedCountryLabel) {
+          return;
+        }
+        selectedCountryLabel.textContent = `${country.nation_answers[0]} (${country.name})`;
+        if (selectedCountryAttempts) {
+          selectedCountryAttempts.textContent = `Attempts: ${country.attempts}`;
+        }
+        if (selectedCountryScore) {
+          selectedCountryScore.textContent = `Last score: ${country.last_score}/3`;
+        }
+      }
+
+      function applyCountryToForm(code) {
+        const country = countriesByCode[code];
+        if (!country) {
+          return;
+        }
+        selectedCode = code;
+        overlayContinentInput.value = activeContinent;
+        overlayCountryInput.value = code;
+        subtitle.textContent = `Fill in nation, nationality, and language for ${country.name}.`;
+        updateSelectionText(code);
+
+        if (!evaluationSubmitted || code !== activeCountryCode) {
+          nationInput.value = "";
+          nationalityInput.value = "";
+          languageInput.value = "";
+          nationInput.placeholder = `z. B. ${country.nation_answers[0]}`;
+          nationalityInput.placeholder = `z. B. ${country.nationality_answers[0]}`;
+          languageInput.placeholder = `z. B. ${country.language_answers[0]}`;
+        }
+      }
+
+      function openOverlay(code) {
+        applyCountryToForm(code || selectedCode);
+        overlay.classList.remove("hidden");
+      }
+
+      function closeOverlay() {
+        overlay.classList.add("hidden");
+      }
+
+      function featureStyle(feature) {
+        const name = normalize(feature.properties && feature.properties.name);
+        const code = geoNameToCode[name];
+        if (!code) {
+          return { color: "#ffffff", weight: 1, fillColor: "#e4e9ee", fillOpacity: 0.25 };
+        }
+
+        if (code === selectedCode) {
+          return { color: "#ffffff", weight: 1, fillColor: "#496177", fillOpacity: 0.95 };
+        }
+
+        if (masteredCodes.has(code)) {
+          return { color: "#ffffff", weight: 1, fillColor: "#86a0b8", fillOpacity: 0.9 };
+        }
+
+        return { color: "#ffffff", weight: 1, fillColor: "#cfd7de", fillOpacity: 0.85 };
+      }
+
+      function refreshMapStyles() {
+        if (geoJsonLayer) {
+          geoJsonLayer.setStyle(featureStyle);
+        }
+      }
+
+      const map = L.map("world-map", {
+        zoomControl: true,
+        attributionControl: false,
+        worldCopyJump: true,
+      }).setView([20, 10], 2);
+
+      fetch(mapDataUrl)
+        .then((response) => response.json())
+        .then((geojson) => {
+          geoJsonLayer = L.geoJSON(geojson, {
+            style: featureStyle,
+            onEachFeature: (feature, layer) => {
+              const name = normalize(feature.properties && feature.properties.name);
+              const code = geoNameToCode[name];
+              if (!code) {
+                return;
+              }
+
+              layer.on("click", () => {
+                openOverlay(code);
+                refreshMapStyles();
+              });
+              layer.on("mouseover", () => {
+                layer.setStyle({ weight: 2 });
+              });
+              layer.on("mouseout", () => {
+                refreshMapStyles();
+              });
+            },
+          }).addTo(map);
+
+          map.fitBounds(geoJsonLayer.getBounds(), { padding: [20, 20] });
+          refreshMapStyles();
+        })
+        .catch(() => {
+          const mapNode = document.getElementById("world-map");
+          if (mapNode) {
+            mapNode.innerHTML = '<div class="p-6 text-sm text-on-surface-variant">Map loading failed. Please reload the page.</div>';
+          }
+        });
+
+      if (openButton) {
+        openButton.addEventListener("click", () => openOverlay(selectedCode));
+      }
+
+      if (closeButton) {
+        closeButton.addEventListener("click", closeOverlay);
+      }
+
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) {
+          closeOverlay();
+        }
+      });
+
+      if (evaluationSubmitted) {
+        openOverlay(activeCountryCode);
+      } else {
+        applyCountryToForm(activeCountryCode);
+      }
+    })();
+  </script>
+</div>
+
+<div class="fixed bottom-0 left-0 z-40 flex w-full items-center justify-between bg-surface-container-lowest px-6 py-4 shadow-soft md:hidden">
+  <a href="/dashboard/" class="flex flex-col items-center gap-1 text-on-surface-variant">
+    <span class="material-symbols-outlined">local_library</span>
+    <span class="font-label text-[10px] uppercase tracking-tighter">Library</span>
+  </a>
+  <a href="/vocabulary/lexicon/" class="flex flex-col items-center gap-1 text-on-surface-variant">
+    <span class="material-symbols-outlined">menu_book</span>
+    <span class="font-label text-[10px] uppercase tracking-tighter">Lexicon</span>
+  </a>
+  <a href="/lesson/world/" class="flex flex-col items-center gap-1 text-primary">
+    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">public</span>
+    <span class="font-label text-[10px] font-bold uppercase tracking-tighter">Practice</span>
+  </a>
+  <a href="/course-path/" class="flex flex-col items-center gap-1 text-on-surface-variant">
+    <span class="material-symbols-outlined">insights</span>
+    <span class="font-label text-[10px] uppercase tracking-tighter">Stats</span>
+  </a>
+</div>
+{% endblock %}

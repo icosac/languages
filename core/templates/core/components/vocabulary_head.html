@@ -1,0 +1,56 @@
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          primary: "#496177",
+          "primary-dim": "#3d556a",
+          "primary-container": "#cce5ff",
+          "on-primary-container": "#3c546a",
+          surface: "#f9f9fb",
+          "surface-container-low": "#f2f4f7",
+          "surface-container-lowest": "#ffffff",
+          "surface-container-high": "#e4e9ee",
+          "surface-container-highest": "#dde3e9",
+          "on-surface": "#2d3338",
+          "on-background": "#2d3338",
+          "on-surface-variant": "#596065",
+          outline: "#757c81",
+          "outline-variant": "#acb3b8",
+          tertiary: "#53616b",
+          "tertiary-container": "#e4f3ff",
+          "on-tertiary-container": "#4e5c66"
+        },
+        fontFamily: {
+          headline: ["Manrope"],
+          body: ["Manrope"],
+          label: ["Inter"]
+        },
+        borderRadius: {
+          DEFAULT: "0.25rem",
+          lg: "0.5rem",
+          xl: "0.75rem",
+          full: "9999px"
+        }
+      }
+    }
+  };
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  }
+  .glass-panel {
+    background: rgba(249, 249, 251, 0.8);
+    backdrop-filter: blur(12px);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>

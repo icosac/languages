@@ -1,0 +1,173 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lumina Lexicon | My Lexicon{% endblock %}
+{% block extra_head %}{% include 'core/components/vocabulary_head.html' %}{% endblock %}
+{% block body_class %}bg-surface{% endblock %}
+{% block main_class %}min-h-screen px-5 py-6 md:ml-64 md:px-12 md:py-10{% endblock %}
+
+{% block content %}
+<aside class="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r border-outline-variant/15 bg-surface-container-low py-8 pl-6 md:flex">
+  <div class="mb-10 text-lg font-extrabold tracking-tight text-on-surface">Lexicon</div>
+  <nav class="flex flex-1 flex-col gap-y-2 pr-4">
+    <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined text-primary">auto_stories</span>
+      Library
+    </a>
+    <a class="flex translate-x-1 items-center gap-4 rounded-l-full bg-surface-container-lowest px-4 py-3 text-sm font-semibold text-primary shadow-soft" href="{% url 'vocabulary_lexicon' %}">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">menu_book</span>
+      Lexicon
+    </a>
+    <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'course_path' %}">
+      <span class="material-symbols-outlined">analytics</span>
+      Insights
+    </a>
+    <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'spelling_test' %}">
+      <span class="material-symbols-outlined">psychology</span>
+      Practice
+    </a>
+    <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'profile' %}">
+      <span class="material-symbols-outlined">settings</span>
+      Settings
+    </a>
+  </nav>
+  <div class="mt-auto pr-6">
+    <a href="#quick-entry" class="inline-flex w-full items-center justify-center gap-2 rounded-panel bg-primary px-5 py-3 text-sm font-semibold text-white hover:opacity-90">
+      <span class="material-symbols-outlined text-sm">add</span>
+      New Entry
+    </a>
+  </div>
+</aside>
+
+<section class="mx-auto max-w-6xl">
+  {% if messages %}
+    <div class="mb-6 space-y-2">
+      {% for message in messages %}
+        <div class="rounded-panel bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <header class="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div class="space-y-2">
+      <h1 class="font-display text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">My Lexicon</h1>
+      <p class="font-label text-xs uppercase tracking-widest text-on-surface-variant">{{ word_count }} words collected</p>
+    </div>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div class="flex gap-3">
+        <a href="{% url 'spelling_test' %}" class="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-soft hover:opacity-90">
+          <span class="material-symbols-outlined text-lg">edit_note</span>
+          Spelling Test
+        </a>
+        <a href="{% url 'vocabulary_test' %}" class="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-soft hover:opacity-90">
+          <span class="material-symbols-outlined text-lg">quiz</span>
+          Vocabulary Test
+        </a>
+      </div>
+      <form method="get" class="relative">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant">search</span>
+        <input name="q" value="{{ search_query }}" class="w-full rounded-full bg-surface-container-low py-2 pl-10 pr-6 text-sm placeholder:text-outline-variant focus:ring-2 focus:ring-primary/20 sm:w-64" placeholder="Search terminology..." type="text">
+      </form>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
+    <div class="space-y-10 lg:col-span-8">
+      <nav class="flex items-center justify-between overflow-x-auto border-b border-outline-variant/10 pb-3">
+        {% for letter in alphabet %}
+          <a href="?letter={{ letter }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+             class="px-2 py-1 font-label text-xs {% if current_letter == letter %}border-b-2 border-primary font-bold text-on-surface{% elif letter == 'ALL' %}font-bold text-primary{% elif letter in available_letters %}font-medium text-on-surface-variant hover:text-on-surface{% else %}font-medium text-outline-variant/50{% endif %}">
+            {{ letter }}
+          </a>
+        {% endfor %}
+      </nav>
+
+      {% if grouped_words %}
+        {% for group in grouped_words %}
+          <section>
+            <div class="mb-6 flex items-center gap-4">
+              <span class="text-2xl font-extrabold text-outline-variant/40">{{ group.letter }}</span>
+              <div class="h-px flex-grow bg-outline-variant/10"></div>
+            </div>
+            <div class="space-y-1">
+              {% for item in group.items %}
+                <div class="group flex items-center justify-between rounded-xl p-4 hover:bg-surface-container-low">
+                  <div class="flex items-baseline gap-6">
+                    <span class="text-xl font-semibold text-on-surface group-hover:text-primary">{{ item.display_word }}</span>
+                    <span class="font-medium text-on-surface-variant">{{ item.translation }}</span>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <span class="rounded bg-primary-container px-2 py-1 font-label text-[10px] font-bold tracking-widest text-on-primary-container">EN</span>
+                    <span class="material-symbols-outlined text-outline opacity-0 transition-opacity group-hover:opacity-100">more_vert</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </section>
+        {% endfor %}
+      {% else %}
+        <div class="rounded-panel bg-surface-container-low p-8 text-sm text-on-surface-variant">
+          No entries matched your filters.
+        </div>
+      {% endif %}
+    </div>
+
+    <aside class="space-y-8 lg:col-span-4">
+      <form id="quick-entry" method="post" class="rounded-card border border-outline-variant/10 bg-surface-container-lowest p-8 shadow-soft">
+        {% csrf_token %}
+        <h3 class="mb-6 font-display text-lg font-bold text-on-surface">Quick Entry</h3>
+        <div class="space-y-6">
+          <div>
+            <label class="mb-2 block font-label text-[10px] font-bold uppercase tracking-widest text-outline-variant">German Term</label>
+            <input name="term" class="w-full rounded-panel bg-surface-container-low p-3 text-sm focus:ring-2 focus:ring-primary/20" placeholder="e.g. Die Zukunft" type="text" required>
+          </div>
+          <div>
+            <label class="mb-2 block font-label text-[10px] font-bold uppercase tracking-widest text-outline-variant">Translation</label>
+            <input name="translation" class="w-full rounded-panel bg-surface-container-low p-3 text-sm focus:ring-2 focus:ring-primary/20" placeholder="e.g. Future" type="text" required>
+          </div>
+          <div>
+            <label class="mb-2 block font-label text-[10px] font-bold uppercase tracking-widest text-outline-variant">Target Language</label>
+            <div class="relative">
+              <select name="target_language" class="w-full appearance-none rounded-panel bg-surface-container-low p-3 text-sm focus:ring-2 focus:ring-primary/20">
+                <option value="EN" {% if target_language == 'EN' %}selected{% endif %}>English (EN)</option>
+                <option value="FR" {% if target_language == 'FR' %}selected{% endif %}>French (FR)</option>
+                <option value="ES" {% if target_language == 'ES' %}selected{% endif %}>Spanish (ES)</option>
+              </select>
+              <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant">keyboard_arrow_down</span>
+            </div>
+          </div>
+          <button type="submit" class="w-full rounded-panel bg-primary-gradient py-3 text-sm font-bold text-white shadow-soft hover:opacity-95">
+            Save to Lexicon
+          </button>
+        </div>
+      </form>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex h-32 flex-col justify-between rounded-card bg-surface-container p-6">
+          <span class="material-symbols-outlined text-primary">bolt</span>
+          <div>
+            <div class="font-display text-2xl font-bold">{{ daily_streak }}</div>
+            <div class="font-label text-[10px] font-bold uppercase text-on-surface-variant">Daily Streak</div>
+          </div>
+        </div>
+        <div class="flex h-32 flex-col justify-between rounded-card bg-surface-container-high p-6">
+          <span class="material-symbols-outlined text-primary">verified</span>
+          <div>
+            <div class="font-display text-2xl font-bold">{{ mastery_percent }}%</div>
+            <div class="font-label text-[10px] font-bold uppercase text-on-surface-variant">Mastery</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-card border border-primary-container/50 bg-primary-container/40 p-6">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-lg">lightbulb</span>
+          <span class="font-label text-xs font-bold uppercase text-on-primary-container">Scholarly Tip</span>
+        </div>
+        <p class="text-sm italic leading-relaxed text-on-primary-container">
+          Pair every noun with its article while revising. This keeps recall stable under test pressure.
+        </p>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

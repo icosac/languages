@@ -1,0 +1,82 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lumina Lexicon | Admin{% endblock %}
+{% block site_nav %}{% endblock %}
+{% block body_class %}bg-surface font-body text-on-surface antialiased{% endblock %}
+{% block main_class %}w-full px-0 py-0{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-6xl px-6 py-10 md:px-10">
+  {% if invalid_token %}
+    <div class="rounded-xl bg-error-container/30 p-8">
+      <h1 class="font-display text-2xl font-bold">Link Invalid or Expired</h1>
+      <p class="mt-2 text-sm text-on-surface-variant">Please request a new one-time access link from <a href="/admin_login" class="font-bold text-primary">admin_login</a>.</p>
+    </div>
+  {% elif admin_unlocked %}
+    <div class="mb-8 flex items-center justify-between gap-4">
+      <h1 class="font-display text-3xl font-extrabold">Admin Users</h1>
+      <div class="flex items-center gap-3">
+        <a href="/admin_login" class="rounded-lg bg-surface-container-low px-4 py-2 text-sm font-semibold">Request New Link</a>
+        <form method="post" action="/admin_logout/" class="inline">
+          {% csrf_token %}
+          <button type="submit" class="rounded-lg bg-surface-container-low px-4 py-2 text-sm font-semibold text-on-surface-variant hover:text-primary">Log Out</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl bg-surface-container-lowest editorial-shadow">
+      <table class="min-w-full text-left text-sm">
+        <thead class="bg-surface-container-low text-on-surface-variant">
+          <tr>
+            <th class="px-4 py-3">ID</th>
+            <th class="px-4 py-3">Username</th>
+            <th class="px-4 py-3">Email</th>
+            <th class="px-4 py-3">Name</th>
+            <th class="px-4 py-3">Staff</th>
+            <th class="px-4 py-3">Superuser</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+            <tr class="border-t border-outline-variant/15">
+              <td class="px-4 py-3">{{ user.id }}</td>
+              <td class="px-4 py-3">{{ user.username }}</td>
+              <td class="px-4 py-3">{{ user.email }}</td>
+              <td class="px-4 py-3">{{ user.first_name }} {{ user.last_name }}</td>
+              <td class="px-4 py-3">{{ user.is_staff }}</td>
+              <td class="px-4 py-3">{{ user.is_superuser }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="px-4 py-6 text-center text-on-surface-variant">No users yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="mx-auto max-w-xl rounded-xl bg-surface-container-lowest p-8 editorial-shadow">
+      <h1 class="font-display text-3xl font-extrabold">Admin Password</h1>
+      <p class="mt-3 text-sm text-on-surface-variant">One-time token accepted. Enter admin password to access the admin page.</p>
+
+      {% if form.non_field_errors %}
+        <div class="mt-4 rounded-lg bg-error-container/30 px-4 py-3 text-sm">
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" class="mt-6 space-y-4">
+        {% csrf_token %}
+        <div class="space-y-2">
+          <label for="password" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Admin Password</label>
+          <input id="password" name="password" type="password" class="lumina-input" required>
+          {% if form.password.errors %}<p class="text-xs text-error">{{ form.password.errors.0 }}</p>{% endif %}
+        </div>
+        <button type="submit" class="w-full rounded-lg bg-primary-gradient py-4 font-display font-bold text-white">Unlock Admin</button>
+      </form>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

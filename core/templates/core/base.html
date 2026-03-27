@@ -1,0 +1,24 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Lumina Lexicon{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  {% block extra_head %}{% endblock %}
+  <link rel="stylesheet" href="{% static 'core/css/tailwind.css' %}">
+</head>
+<body class="{% block body_class %}shell{% endblock %}">
+  {% block site_nav %}
+    {% include "core/components/navbar.html" %}
+  {% endblock %}
+  <main class="{% block main_class %}mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{% static 'core/js/main.js' %}"></script>
+</body>
+</html>

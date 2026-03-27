@@ -1,0 +1,159 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lumina Lexicon | Spelling Test{% endblock %}
+{% block extra_head %}{% include 'core/components/vocabulary_head.html' %}{% endblock %}
+{% block site_nav %}{% endblock %}
+{% block body_class %}bg-surface{% endblock %}
+{% block main_class %}min-h-screen px-0 py-0 md:ml-64{% endblock %}
+
+{% block content %}
+<aside class="fixed left-0 top-0 hidden h-screen w-64 flex-col bg-surface-container-low p-6 md:flex">
+  <div class="mb-10">
+    <h1 class="text-lg font-extrabold tracking-tight text-primary">The Atelier</h1>
+    <p class="text-xs font-medium text-on-surface-variant">Advanced English</p>
+  </div>
+  <nav class="flex-1 space-y-2">
+    <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined">local_library</span>
+      <span>Library</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'vocabulary_lexicon' %}">
+      <span class="material-symbols-outlined">menu_book</span>
+      <span>Lexicon</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'course_path' %}">
+      <span class="material-symbols-outlined">analytics</span>
+      <span>Insights</span>
+    </a>
+    <a class="flex translate-x-1 items-center gap-3 rounded-panel bg-surface-container-lowest px-4 py-3 text-sm font-medium text-primary shadow-soft" href="{% url 'spelling_test' %}">
+      <span class="material-symbols-outlined">fitness_center</span>
+      <span>Practice</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'profile' %}">
+      <span class="material-symbols-outlined">settings</span>
+      <span>Settings</span>
+    </a>
+  </nav>
+  <div class="mt-auto pt-6">
+    <a href="{% url 'lesson_articles' %}" class="inline-flex w-full items-center justify-center rounded-panel bg-primary-gradient py-3 text-sm font-bold text-white">
+      Start Lesson
+    </a>
+  </div>
+</aside>
+
+<section class="min-h-screen bg-surface p-6 md:p-12">
+  {% if messages %}
+    <div class="mb-6 space-y-2">
+      {% for message in messages %}
+        <div class="rounded-panel bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <header class="mb-10 flex flex-col justify-between gap-8 xl:flex-row xl:items-end">
+    <div class="max-w-2xl">
+      <nav class="mb-4 flex items-center gap-2 font-label text-xs uppercase tracking-widest text-on-surface-variant">
+        <span>Practice</span>
+        <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+        <span class="font-bold text-primary">Spelling</span>
+      </nav>
+      <h2 class="font-display text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">Spelling Test</h2>
+      <p class="mt-4 text-lg font-light leading-relaxed text-on-surface-variant">
+        Listen to each term and transcribe it. Then classify word type and provide contextual translation.
+      </p>
+    </div>
+    <div class="hidden flex-col items-end lg:flex">
+      <div class="h-1.5 w-48 overflow-hidden rounded-full bg-surface-container-highest">
+        <div class="h-full bg-primary" style="width:{% widthratio completed_count total_items 100 %}%"></div>
+      </div>
+      <span class="mt-2 text-xs font-label text-on-surface-variant">{{ completed_count }} of {{ total_items }} words completed</span>
+    </div>
+  </header>
+
+  <form method="post" class="space-y-10">
+    {% csrf_token %}
+    <section class="rounded-card bg-surface-container-lowest p-2 shadow-soft md:p-6">
+      <div class="overflow-x-auto">
+        <table class="w-full border-separate border-spacing-y-4">
+          <thead>
+            <tr class="text-left font-label text-xs uppercase tracking-widest text-on-surface-variant/70">
+              <th class="w-14 pb-2 pl-4 text-center">Audio</th>
+              <th class="px-4 pb-2">Transcription</th>
+              <th class="w-48 px-4 pb-2">Word Type</th>
+              <th class="pr-4 pb-2">Translation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in test_rows %}
+              <tr class="group transition-colors duration-200 hover:bg-surface-container-low">
+                <td class="rounded-l-lg py-3 pl-4 align-middle">
+                  <input type="hidden" name="word_id" value="{{ row.id }}">
+                  <button type="button" class="play-audio flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-high text-primary transition-all hover:bg-primary hover:text-white" data-pronounce="{{ row.display_word }}">
+                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">play_arrow</span>
+                  </button>
+                </td>
+                <td class="px-4 py-3">
+                  <input name="transcription_{{ row.id }}" value="{{ row.transcription }}" placeholder="Enter the spoken term..." class="w-full rounded-panel bg-surface-container-low px-4 py-3 font-medium text-on-surface placeholder:text-outline-variant focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/40" type="text">
+                </td>
+                <td class="px-4 py-3">
+                  <select name="type_{{ row.id }}" class="w-full cursor-pointer appearance-none rounded-panel bg-surface-container-low px-4 py-3 font-medium text-on-surface-variant focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/40">
+                    <option value="">Select Type</option>
+                    {% for choice, label in word_type_choices %}
+                      <option value="{{ choice }}" {% if row.selected_type == choice %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td class="rounded-r-lg py-3 pr-4">
+                  <input name="translation_{{ row.id }}" value="{{ row.submitted_translation }}" placeholder="Meaning in context..." class="w-full rounded-panel bg-surface-container-low px-4 py-3 font-medium text-on-surface placeholder:text-outline-variant focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/40" type="text">
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {% if submitted %}
+      <section class="rounded-card bg-surface-container-low p-6">
+        <p class="font-label text-xs uppercase tracking-widest text-on-surface-variant">Spelling score</p>
+        <p class="mt-2 font-display text-3xl font-extrabold text-primary">{{ score }} / {{ max_score }}</p>
+        <p class="mt-1 text-sm text-on-surface-variant">Accuracy: {{ score_percent }}%</p>
+      </section>
+    {% endif %}
+
+    <footer class="mb-8 mt-8 flex flex-col items-center justify-between gap-6 md:flex-row">
+      <div class="flex items-center gap-4 text-on-surface-variant">
+        <span class="material-symbols-outlined text-outline-variant">info</span>
+        <p class="text-sm italic">Changes are saved automatically to your session draft.</p>
+      </div>
+      <div class="flex items-center gap-6">
+        <button name="action" value="save" type="submit" class="px-8 py-3 font-bold text-on-surface-variant transition-colors hover:text-primary">
+          Save Draft
+        </button>
+        <button name="action" value="submit" type="submit" class="rounded-panel bg-primary-gradient px-10 py-4 font-bold tracking-tight text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]">
+          Submit Test
+        </button>
+      </div>
+    </footer>
+  </form>
+</section>
+
+<script>
+  (function () {
+    const buttons = document.querySelectorAll(".play-audio");
+    if (!("speechSynthesis" in window)) return;
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const text = button.dataset.pronounce || "";
+        if (!text) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "de-DE";
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+      });
+    });
+  })();
+</script>
+{% endblock %}

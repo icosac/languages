@@ -1,0 +1,146 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lumina Lexicon | Vocabulary Test{% endblock %}
+{% block extra_head %}{% include 'core/components/vocabulary_head.html' %}{% endblock %}
+{% block site_nav %}{% endblock %}
+{% block body_class %}bg-surface{% endblock %}
+{% block main_class %}min-h-screen px-0 py-0 md:ml-64{% endblock %}
+
+{% block content %}
+<aside class="fixed left-0 top-0 hidden h-screen w-64 flex-col bg-surface-container-low p-6 md:flex">
+  <div class="mb-10">
+    <h1 class="text-lg font-extrabold tracking-tight text-primary">The Atelier</h1>
+    <p class="text-sm font-medium text-on-surface-variant">Advanced English</p>
+  </div>
+  <nav class="flex-1 space-y-2">
+    <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'dashboard' %}">
+      <span class="material-symbols-outlined">local_library</span>
+      <span>Library</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'vocabulary_lexicon' %}">
+      <span class="material-symbols-outlined">menu_book</span>
+      <span>Lexicon</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'course_path' %}">
+      <span class="material-symbols-outlined">analytics</span>
+      <span>Insights</span>
+    </a>
+    <a class="flex translate-x-1 items-center gap-3 rounded-panel bg-surface-container-lowest px-4 py-3 text-sm font-medium text-primary shadow-soft" href="{% url 'vocabulary_test' %}">
+      <span class="material-symbols-outlined">fitness_center</span>
+      <span>Practice</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface-variant" href="{% url 'profile' %}">
+      <span class="material-symbols-outlined">settings</span>
+      <span>Settings</span>
+    </a>
+  </nav>
+  <div class="mt-auto">
+    <a href="{% url 'lesson_articles' %}" class="inline-flex w-full items-center justify-center rounded-panel bg-primary-gradient py-3 text-sm font-bold text-white">
+      Start Lesson
+    </a>
+  </div>
+</aside>
+
+<section class="min-h-screen">
+  <header class="glass-panel sticky top-0 z-30 flex flex-col gap-5 px-6 py-5 sm:flex-row sm:items-center sm:justify-between md:px-12">
+    <div class="flex items-center gap-4">
+      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-highest text-xs font-bold text-primary">LS</div>
+      <h2 class="text-xl font-bold tracking-tight text-primary">Vocabulary Test</h2>
+    </div>
+    <div class="flex items-center gap-6">
+      <a href="{% url 'spelling_test' %}" class="rounded-full bg-surface-container-low px-3 py-1.5 text-xs font-semibold text-on-surface-variant">Go to Spelling Test</a>
+      <div class="flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1.5">
+        <span class="material-symbols-outlined text-sm text-primary">timer</span>
+        <span class="font-label text-xs font-semibold text-on-surface-variant">20 terms</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-5xl px-6 py-8 md:px-12">
+    {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for message in messages %}
+          <div class="rounded-panel bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+      <div class="space-y-1">
+        <h3 class="font-display text-2xl font-extrabold tracking-tight text-on-background">Level B2 Proficiency Check</h3>
+        <p class="font-label text-sm text-on-surface-variant">Unit 4: Abstract Concepts and Architecture</p>
+      </div>
+      <div class="text-left md:text-right">
+        <p class="font-label text-xs uppercase tracking-widest text-outline-variant">Progress</p>
+        <div class="mt-2 h-1.5 w-48 rounded-full bg-surface-container-highest">
+          <div class="h-full rounded-full bg-primary" style="width:{% widthratio completed_count total_items 100 %}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <form method="post" class="space-y-8">
+      {% csrf_token %}
+      <div class="overflow-hidden rounded-card bg-surface-container-lowest shadow-soft">
+        <table class="w-full border-collapse text-left">
+          <thead class="bg-surface-container-low">
+            <tr>
+              <th class="px-8 py-5 font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant">German Term</th>
+              <th class="px-8 py-5 font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant">Word Type</th>
+              <th class="px-8 py-5 font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant">English Translation</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-container">
+            {% for row in test_rows %}
+              <tr class="group transition-colors hover:bg-surface-container-low/30">
+                <td class="px-8 py-4 font-display font-semibold text-on-surface">
+                  <input type="hidden" name="word_id" value="{{ row.id }}">
+                  {{ row.display_word }}
+                </td>
+                <td class="px-8 py-4">
+                  <select name="type_{{ row.id }}" class="w-full rounded-panel bg-surface-container-low px-3 py-2 text-sm text-on-surface-variant focus:ring-1 focus:ring-primary/40">
+                    <option value="">Select type...</option>
+                    {% for choice, label in word_type_choices %}
+                      <option value="{{ choice }}" {% if row.selected_type == choice %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td class="px-8 py-4">
+                  <input name="translation_{{ row.id }}" value="{{ row.submitted_translation }}" class="w-full rounded-panel bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:ring-1 focus:ring-primary/40" placeholder="Enter translation..." type="text">
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if submitted %}
+        <div class="rounded-card bg-surface-container-low p-6">
+          <p class="font-label text-xs uppercase tracking-widest text-on-surface-variant">Score</p>
+          <p class="mt-2 font-display text-3xl font-extrabold text-primary">{{ score }} / {{ max_score }}</p>
+          <p class="mt-1 text-sm text-on-surface-variant">Accuracy: {{ score_percent }}%</p>
+        </div>
+      {% endif %}
+
+      <div class="flex flex-col items-center gap-6 pb-20">
+        <p class="font-label text-sm italic text-on-surface-variant">Review your answers before submitting. Precision is the scholar's grace.</p>
+        <div class="flex flex-wrap items-center gap-4">
+          <a href="{% url 'vocabulary_lexicon' %}" class="rounded-panel bg-surface-container-highest px-8 py-4 font-bold text-primary">Save Draft</a>
+          <button type="submit" class="rounded-panel bg-primary-gradient px-12 py-4 font-bold text-white shadow-lg shadow-primary/20">Submit Test</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<div class="fixed bottom-8 right-8 z-20 hidden items-center gap-6 rounded-card bg-surface-container-lowest/90 px-6 py-4 shadow-soft backdrop-blur-md md:flex">
+  <div class="flex flex-col">
+    <span class="font-label text-[10px] uppercase tracking-tight text-outline-variant">Items Completed</span>
+    <span class="font-display font-bold text-primary">{{ completed_count }} / {{ total_items }}</span>
+  </div>
+  <div class="h-10 w-px bg-surface-container"></div>
+  <div class="flex flex-col">
+    <span class="font-label text-[10px] uppercase tracking-tight text-outline-variant">Confidence Score</span>
+    <span class="font-display font-bold text-on-surface">{% if submitted %}{{ score_percent }}%{% else %}0%{% endif %}</span>
+  </div>
+</div>
+{% endblock %}

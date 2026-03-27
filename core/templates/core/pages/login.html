@@ -1,0 +1,63 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lumina Lexicon | Login{% endblock %}
+{% block site_nav %}{% endblock %}
+{% block body_class %}bg-surface font-body text-on-surface antialiased{% endblock %}
+{% block main_class %}relative flex min-h-screen items-center justify-center overflow-hidden p-6{% endblock %}
+
+{% block content %}
+<div class="absolute -left-16 -top-16 h-72 w-72 rounded-full bg-primary-container/30 blur-[100px]"></div>
+<div class="absolute -bottom-16 -right-16 h-72 w-72 rounded-full bg-tertiary-container/30 blur-[100px]"></div>
+<section class="relative z-10 grid w-full max-w-[1000px] overflow-hidden rounded-xl bg-surface-container-lowest editorial-shadow md:grid-cols-2">
+  <div class="hidden flex-col justify-between bg-surface-container-low p-12 md:flex">
+    <div>
+      <h1 class="font-display text-2xl font-bold text-primary">The Mindful Scholar</h1>
+    </div>
+    <div>
+      <h2 class="max-w-sm font-display text-4xl font-extrabold leading-tight">A quiet space for learning languages.</h2>
+      <p class="mt-5 max-w-xs text-sm leading-relaxed text-on-surface-variant">Return to your practice.</p>
+    </div>
+  </div>
+
+  <div class="p-8 md:p-12">
+    <div class="mb-10">
+      <h3 class="font-display text-2xl font-bold">Sign In</h3>
+      <p class="mt-2 text-sm text-on-surface-variant">Enter your credentials to access your atelier.</p>
+    </div>
+    {% if form.non_field_errors %}
+      <div class="mb-4 rounded-lg bg-error-container/30 px-4 py-3 text-sm text-on-surface">
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <form class="space-y-6" method="post">
+      {% csrf_token %}
+      <div class="space-y-2">
+        <label for="email" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Email</label>
+        <input id="email" name="email" type="email" value="{{ form.email.value|default:'' }}" placeholder="name@example.com" class="lumina-input" required>
+        {% if form.email.errors %}<p class="text-xs text-error">{{ form.email.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="space-y-2">
+        <label for="password" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Password</label>
+        <input id="password" name="password" type="password" placeholder="••••••••" class="lumina-input" required>
+        {% if form.password.errors %}<p class="text-xs text-error">{{ form.password.errors.0 }}</p>{% endif %}
+      </div>
+      <button type="submit" class="w-full rounded-lg bg-primary-gradient py-4 font-display font-bold text-white">Sign In</button>
+    </form>
+
+    <p class="mt-8 text-center text-sm text-on-surface-variant">New to the webpage? <a href="/register/" class="font-bold text-primary">Create Account</a></p>
+  </div>
+</section>
+
+<footer class="absolute bottom-0 left-0 right-0 w-full py-8">
+  <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row md:px-10">
+    <p class="font-label text-xs uppercase tracking-widest text-outline-variant">© 2026 Enrico Saccon</p>
+    <div class="flex gap-8 font-label text-[10px] uppercase tracking-widest text-outline-variant">
+      <a href="#">Privacy</a>
+      <a href="#">Institutional</a>
+      <a href="#">Support</a>
+    </div>
+  </div>
+</footer>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lumina Lexicon | Accept Invitation{% endblock %}
+{% block site_nav %}{% endblock %}
+{% block body_class %}bg-surface font-body text-on-surface antialiased{% endblock %}
+{% block main_class %}relative flex min-h-screen items-center justify-center overflow-hidden p-6{% endblock %}
+
+{% block content %}
+<div class="absolute -left-16 -top-16 h-72 w-72 rounded-full bg-primary-container/30 blur-[100px]"></div>
+<div class="absolute -bottom-16 -right-16 h-72 w-72 rounded-full bg-tertiary-container/30 blur-[100px]"></div>
+<section class="relative z-10 grid w-full max-w-[1080px] overflow-hidden rounded-xl bg-surface-container-lowest editorial-shadow md:grid-cols-2">
+  <div class="hidden flex-col justify-between bg-surface-container-low p-12 md:flex">
+    <div>
+      <h1 class="font-display text-2xl font-bold text-primary">The Mindful Scholar</h1>
+      <p class="mt-2 font-label text-xs uppercase tracking-widest text-outline-variant">Invitation-only onboarding</p>
+    </div>
+    <div>
+      <h2 class="max-w-sm font-display text-4xl font-extrabold leading-tight">You are invited to join.</h2>
+      <p class="mt-5 max-w-xs text-sm leading-relaxed text-on-surface-variant">Complete your profile and set credentials to activate your account.</p>
+    </div>
+    <p class="font-label text-xs text-on-surface-variant">Secure one-time enrollment</p>
+  </div>
+
+  <div class="p-8 md:p-12">
+    <div class="mb-8">
+      <h3 class="font-display text-2xl font-bold">Accept Invitation</h3>
+      <p class="mt-2 text-sm text-on-surface-variant">Email is locked to your invitation.</p>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="mb-4 rounded-lg bg-error-container/30 px-4 py-3 text-sm text-on-surface">
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form class="space-y-5" method="post">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="space-y-2">
+          <label for="first_name" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Name</label>
+          <input id="first_name" name="first_name" type="text" value="{{ form.first_name.value|default:'' }}" class="lumina-input" required>
+          {% if form.first_name.errors %}<p class="text-xs text-error">{{ form.first_name.errors.0 }}</p>{% endif %}
+        </div>
+        <div class="space-y-2">
+          <label for="last_name" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Surname</label>
+          <input id="last_name" name="last_name" type="text" value="{{ form.last_name.value|default:'' }}" class="lumina-input" required>
+          {% if form.last_name.errors %}<p class="text-xs text-error">{{ form.last_name.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label for="email" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Email</label>
+        <input id="email" name="email" type="email" value="{{ form.email.value|default:'' }}" readonly class="lumina-input bg-surface-container-high text-on-surface-variant">
+      </div>
+
+      <div class="space-y-2">
+        <label for="username" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Username</label>
+        <input id="username" name="username" type="text" value="{{ form.username.value|default:'' }}" class="lumina-input" required>
+        <p class="text-xs text-on-surface-variant">Default suggestion uses name.surname, but you can edit it.</p>
+        {% if form.username.errors %}<p class="text-xs text-error">{{ form.username.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="space-y-2">
+          <label for="password" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Password</label>
+          <input id="password" name="password" type="password" class="lumina-input" required>
+          {% if form.password.errors %}<p class="text-xs text-error">{{ form.password.errors.0 }}</p>{% endif %}
+        </div>
+        <div class="space-y-2">
+          <label for="password_confirm" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Confirm Password</label>
+          <input id="password_confirm" name="password_confirm" type="password" class="lumina-input" required>
+          {% if form.password_confirm.errors %}<p class="text-xs text-error">{{ form.password_confirm.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <label class="flex items-start gap-3 text-sm text-on-surface-variant">
+        <input type="checkbox" name="prefers_username" value="1" class="mt-0.5" {% if form.prefers_username.value %}checked{% endif %}>
+        <span>Prefer being referred to by username (instead of full name).</span>
+      </label>
+
+      <button type="submit" class="w-full rounded-lg bg-primary-gradient py-4 font-display font-bold text-white">Create My Account</button>
+    </form>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const firstName = document.getElementById('first_name');
+    const lastName = document.getElementById('last_name');
+    const username = document.getElementById('username');
+    if (!firstName || !lastName || !username) {
+      return;
+    }
+
+    let touched = Boolean(username.value);
+    username.addEventListener('input', () => {
+      touched = true;
+    });
+
+    function slugify(value) {
+      return value
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '.')
+        .replace(/[^a-z0-9.]/g, '')
+        .replace(/\.+/g, '.');
+    }
+
+    function suggest() {
+      if (touched) {
+        return;
+      }
+      const suggested = slugify(firstName.value + '.' + lastName.value).replace(/^\.|\.$/g, '');
+      username.value = suggested;
+    }
+
+    firstName.addEventListener('input', suggest);
+    lastName.addEventListener('input', suggest);
+    suggest();
+  })();
+</script>
+{% endblock %}

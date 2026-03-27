@@ -1,0 +1,11 @@
+<div class="space-y-2">
+  {% if label %}
+    <div class="flex items-center justify-between">
+      <p class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">{{ label }}</p>
+      <p class="font-label text-[11px] font-semibold text-primary">{{ value }}%</p>
+    </div>
+  {% endif %}
+  <div class="h-2 w-full rounded-full bg-surface-container-high">
+    <div class="h-2 rounded-full bg-primary" style="width: {{ value }}%"></div>
+  </div>
+</div>

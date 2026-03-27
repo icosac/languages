@@ -1,0 +1,66 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lumina Lexicon | Course Path{% endblock %}
+{% block body_class %}bg-surface{% endblock %}
+{% block main_class %}w-full px-0 py-0{% endblock %}
+
+{% block content %}
+<div class="mx-auto flex min-h-screen max-w-7xl px-6 py-10 md:px-10">
+<aside class="hidden w-64 shrink-0 flex-col gap-2 bg-surface-container-low py-8 lg:flex">
+  <div class="px-8 mb-7">
+    <p class="text-lg font-bold text-primary">{{ user_name|default:'Wilhelm S.' }}</p>
+    <p class="font-label text-[10px] uppercase tracking-wider text-on-surface-variant">Level B2 • German</p>
+  </div>
+  <a class="px-8 py-3 text-on-surface-variant" href="/dashboard/">Overview</a>
+  <a class="translate-x-1 rounded-r-xl bg-surface-container-lowest px-8 py-3 font-bold text-primary" href="/course-path/">Practice</a>
+  <a class="px-8 py-3 text-on-surface-variant" href="/profile/">Milestones</a>
+</aside>
+
+<section class="flex-1 lg:ml-16">
+  <div class="mb-12 max-w-3xl">
+    <h1 class="mb-4 font-display text-5xl font-extrabold tracking-tight">Course Path</h1>
+    <p class="text-lg leading-relaxed text-on-surface-variant">Your progression is a deliberate sequence of focused steps. Each node unlocks the next phase of clarity.</p>
+  </div>
+
+  <div class="relative max-w-4xl">
+    <div class="path-line absolute bottom-0 left-12 top-0 w-0.5 opacity-40"></div>
+    <div class="space-y-10">
+      {% for level in path_levels %}
+        <article class="relative flex items-start gap-8 {% if level.status == 'locked' %}opacity-60{% endif %}">
+          <div class="z-10 flex h-24 w-24 items-center justify-center rounded-full {% if level.status == 'completed' %}bg-primary-container text-on-primary-container{% elif level.status == 'in_progress' %}bg-primary text-on-primary ring-8 ring-primary/10{% else %}bg-surface-dim text-on-surface-variant{% endif %}">
+            <span class="material-symbols-outlined text-4xl">{% if level.status == 'completed' %}check{% elif level.status == 'in_progress' %}auto_stories{% else %}lock{% endif %}</span>
+          </div>
+          <div class="flex-1 rounded-xl {% if level.status == 'locked' %}bg-surface-container-low{% else %}bg-surface-container-lowest{% endif %} p-8 {% if level.status == 'in_progress' %}border-l-4 border-primary{% endif %}">
+            <div class="mb-2 flex items-start justify-between">
+              <span class="font-label text-xs uppercase tracking-widest {% if level.status == 'in_progress' %}text-primary{% else %}text-outline{% endif %}">Level {{ level.code }}</span>
+              <span class="rounded-full px-3 py-1 font-label text-[10px] font-bold uppercase tracking-widest {% if level.status == 'completed' %}bg-primary-container text-on-primary-container{% elif level.status == 'in_progress' %}bg-primary text-on-primary{% else %}text-outline{% endif %}">{{ level.status|cut:'_' }}</span>
+            </div>
+            <h3 class="mb-3 font-display text-2xl font-bold">{{ level.title }}</h3>
+            <p class="mb-5 text-sm leading-relaxed text-on-surface-variant">{{ level.description }}</p>
+            <div class="flex items-center gap-4">
+              <div class="h-2 flex-1 rounded-full bg-surface-container-highest">
+                <div class="h-2 rounded-full bg-primary" style="width: {{ level.progress }}%"></div>
+              </div>
+              <span class="font-label text-xs font-bold text-primary">{{ level.progress }}%</span>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+</div>
+
+<section class="w-full bg-surface-container-low py-16">
+  <div class="mx-auto grid max-w-7xl gap-8 px-6 md:grid-cols-3 md:px-10">
+    <article class="rounded-xl bg-surface-container-lowest p-8 md:col-span-2">
+      <h3 class="mb-3 font-display text-2xl font-bold">Weekly Momentum</h3>
+      <p class="text-sm text-on-surface-variant">You are maintaining a stable rhythm with increasing lesson depth.</p>
+    </article>
+    <article class="rounded-xl bg-primary p-8 text-on-primary">
+      <p class="font-label text-xs uppercase tracking-widest text-white/80">Current rank</p>
+      <p class="mt-2 font-display text-3xl font-extrabold">Focused Scholar</p>
+    </article>
+  </div>
+</section>
+{% endblock %}

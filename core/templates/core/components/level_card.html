@@ -1,0 +1,11 @@
+<article class="{% if level.status == 'completed' %}bg-primary-container{% elif level.status == 'in_progress' %}bg-surface-container-lowest{% else %}bg-surface-container-high{% endif %} rounded-card p-6">
+  <div class="mb-8 flex items-start justify-between">
+    <p class="font-display text-3xl font-extrabold text-primary">{{ level.code }}</p>
+    <p class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">{{ level.lessons }} lessons</p>
+  </div>
+  <h3 class="font-display text-xl font-bold text-on-surface">{{ level.title }}</h3>
+  <p class="mt-2 text-sm leading-relaxed text-on-surface-variant">{{ level.description }}</p>
+  <div class="mt-6">
+    {% include "core/components/progress_bar.html" with label="Progress" value=level.progress %}
+  </div>
+</article>
