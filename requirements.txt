@@ -1,1 +1,2 @@
-pip install torch==2.4.0+cu122 torchaudio==2.4.0+cu122 --extra-index-url https://download.pytorch.org/whl/cu122
+sounddevice
+TTS

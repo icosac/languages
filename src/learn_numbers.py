@@ -71,13 +71,12 @@ def print_results(done, correct, counter):
             print(f"{num} {answer} {correct}")
 
 
-def main_voice(n_repetitions, use_gpu):
-    from voice import audio
-
-    # Create an instance of the audio class
-    logger.debug("Loading TTS model...")
-    tts = audio(model_type="tts_models/de/thorsten/tacotron2-DDC", use_gpu=use_gpu, verbose=logger.level == logging.DEBUG)
-    logger.debug("TTS model loaded.")
+def main_voice(n_repetitions, voice, use_gpu):
+    if voice:
+        from voice import audio
+        logger.debug("Loading TTS model...")
+        tts = audio(model_type="tts_models/de/thorsten/tacotron2-DDC", use_gpu=use_gpu, verbose=logger.level == logging.DEBUG)
+        logger.debug("TTS model loaded.")
 
     counter = 0
     correct = 0
