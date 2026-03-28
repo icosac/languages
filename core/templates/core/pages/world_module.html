@@ -34,7 +34,7 @@
     <nav class="hidden items-center gap-8 md:flex">
       <a href="/dashboard/" class="font-body text-sm text-on-surface-variant hover:text-primary">Library</a>
       <a href="/vocabulary/lexicon/" class="font-body text-sm text-on-surface-variant hover:text-primary">Lexicon</a>
-      <a href="/course-path/" class="font-body text-sm text-on-surface-variant hover:text-primary">Insights</a>
+      <a href="{{ course_nav_url }}" class="font-body text-sm text-on-surface-variant hover:text-primary">Insights</a>
       <a href="/lesson/world/" class="border-b-2 border-primary pb-1 font-body text-sm font-semibold text-primary">Practice</a>
     </nav>
     <a href="/profile/" class="inline-flex items-center gap-1 rounded-panel px-2 py-1 text-on-surface-variant hover:bg-surface-container-low hover:text-primary">
@@ -58,7 +58,7 @@
         <span class="material-symbols-outlined">menu_book</span>
         Lexicon
       </a>
-      <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="/course-path/">
+      <a class="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-on-surface-variant" href="{{ course_nav_url }}">
         <span class="material-symbols-outlined">insights</span>
         Insights
       </a>
@@ -86,7 +86,7 @@
       <nav class="mb-4 flex items-center gap-2 text-xs font-label text-on-surface-variant">
         <span>A1.1 Level</span>
         <span class="material-symbols-outlined text-[10px]">chevron_right</span>
-        <a href="/level/a1-1/" class="hover:text-primary">Vocabulary</a>
+        <a href="{{ course_nav_url }}" class="hover:text-primary">Vocabulary</a>
         <span class="material-symbols-outlined text-[10px]">chevron_right</span>
         <span class="font-semibold text-primary">Countries &amp; Nationalities</span>
       </nav>
@@ -94,9 +94,61 @@
       <p class="max-w-2xl leading-relaxed text-on-surface-variant">Expand your global vocabulary. Learn the names of nations, their corresponding nationalities, and the languages spoken within them.</p>
     </section>
 
+    <div class="mb-8 flex flex-wrap items-center gap-3">
+      {% if is_test_mode %}
+        <a href="/lesson/world/" class="rounded-full bg-surface-container-low px-5 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high">Back to Learning</a>
+        <a href="/lesson/world/?mode=test" class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:opacity-90">Restart Test</a>
+        <p class="text-xs text-on-surface-variant">Test mode active: choose from {{ test_pool_size }} highlighted countries and write the German country name.</p>
+      {% else %}
+        <a href="/lesson/world/?mode=test" class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:opacity-90">Start Test</a>
+        <p class="text-xs text-on-surface-variant">Learning mode active: you can click any mapped country and the module may show expected answers.</p>
+      {% endif %}
+    </div>
+
+      <section class="mb-8 rounded-xl bg-surface-container-lowest p-4 editorial-shadow md:p-6">
+        <div class="flex flex-col gap-4">
+          <form method="post" class="w-full">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_learning_country">
+            <input type="hidden" name="mode" value="{{ world_mode }}">
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <label for="learning-country-name" class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Country (English)</label>
+                <input id="learning-country-name" name="learning_country_name" class="w-full rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface focus:ring-2 focus:ring-primary/20" placeholder="e.g. Japan, Germany, South Korea" autocomplete="off" type="text">
+              </div>
+              <div>
+                <label for="learning-language" class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Language</label>
+                <input id="learning-language" name="learning_language" class="w-full rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface focus:ring-2 focus:ring-primary/20" placeholder="e.g. Japanese, German, Korean" autocomplete="off" type="text">
+              </div>
+              <div>
+                <label for="learning-nationality-masculine" class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Nationality (Masculine)</label>
+                <input id="learning-nationality-masculine" name="learning_nationality_masculine" class="w-full rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface focus:ring-2 focus:ring-primary/20" placeholder="e.g. Japaner" autocomplete="off" type="text">
+              </div>
+              <div>
+                <label for="learning-nationality-feminine" class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Nationality (Feminine)</label>
+                <input id="learning-nationality-feminine" name="learning_nationality_feminine" class="w-full rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface focus:ring-2 focus:ring-primary/20" placeholder="e.g. Japanerin" autocomplete="off" type="text">
+              </div>
+            </div>
+            <button type="submit" class="mt-4 rounded-lg bg-primary-gradient px-5 py-3 text-sm font-semibold text-white hover:opacity-90">Add Learning Entry</button>
+          </form>
+          <p class="text-xs text-on-surface-variant">Test mode draws countries only from this learning list.</p>
+        </div>
+        <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+          {% for country in learning_countries %}
+            <article class="rounded-lg bg-primary/10 px-4 py-3 text-xs text-primary">
+              <p class="font-semibold text-sm">{{ country.learning_country_name }}</p>
+              <p class="mt-1">Nationality: {{ country.learning_nationality_masculine|default:"-" }} / {{ country.learning_nationality_feminine|default:"-" }}</p>
+              <p>Language: {{ country.learning_language|default:"-" }}</p>
+            </article>
+          {% empty %}
+            <p class="text-xs text-on-surface-variant">No learning countries yet. Add country, language, and both nationality forms to unlock meaningful test mode.</p>
+          {% endfor %}
+        </div>
+      </section>
+
     <div class="mb-10 max-w-md">
       <div class="mb-2 flex items-end justify-between">
-        <span class="text-xs font-label uppercase tracking-widest text-on-surface-variant">{{ active_continent.label }} Progression</span>
+        <span class="text-xs font-label uppercase tracking-widest text-on-surface-variant">Global Progression</span>
         <span class="text-sm font-bold text-primary">{{ continent_progress_percent }}%</span>
       </div>
       <div class="h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
@@ -105,130 +157,148 @@
       <p class="mt-2 text-xs text-on-surface-variant">{{ continent_completed }} of {{ continent_total }} countries completed</p>
     </div>
 
-    <div class="mb-8 flex flex-wrap gap-3">
-      {% for continent in continent_tabs %}
-        <a href="?continent={{ continent.slug }}" class="rounded-full px-6 py-2 text-sm tracking-tight transition {% if continent.is_active %}bg-primary text-white shadow-soft{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high{% endif %}">
-          {{ continent.label }}
-        </a>
-      {% endfor %}
-    </div>
-
     <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
       <section class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-8 editorial-shadow lg:col-span-8">
         <div class="absolute right-1 top-1 z-10">
           <span class="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">Interactive Map</span>
         </div>
-        <div id="world-map" role="img" aria-label="Interactive {{ active_continent.english_label }} map"></div>
-        <div class="mt-6 flex items-center justify-between">
-          <div>
-            <p class="text-xs font-label text-on-surface-variant">CURRENT TARGET</p>
-            <p id="selected-country-label" class="font-display text-lg font-bold text-on-surface">{{ active_country.nation_answers.0 }} ({{ active_country.name }})</p>
+        <div id="world-map" role="img" aria-label="Interactive world map"></div>
+        <div class="mt-6 grid grid-cols-1 gap-3 text-xs text-on-surface-variant sm:grid-cols-3">
+          <div class="rounded-lg bg-surface-container-low px-4 py-3">
+            <p class="font-label uppercase tracking-wider">Selected</p>
+            <p id="selected-country-label" class="mt-1 font-semibold text-on-surface">{% if is_test_mode %}{{ active_country.name }}{% else %}{{ active_country.nation_answers.0 }} ({{ active_country.name }}){% endif %}</p>
           </div>
-          <div class="text-xs text-on-surface-variant">
-            <p id="selected-country-attempts">Attempts: {{ active_country_attempts }}</p>
-            <p id="selected-country-score">Last score: {{ active_country_last_score }}/3</p>
-            <button id="open-country-form" type="button" class="mt-2 rounded-lg bg-primary-gradient px-4 py-2 font-semibold text-white hover:opacity-90">Open Form</button>
+          <div class="rounded-lg bg-surface-container-low px-4 py-3">
+            <p class="font-label uppercase tracking-wider">Legend</p>
+            <p class="mt-1">Dark: selected country</p>
           </div>
-        </div>
-
-        <div id="country-form-overlay" class="{% if evaluation.submitted %}absolute{% else %}hidden absolute{% endif %}" style="top: 0; left: 0; right: 0; bottom: 0; background: rgba(45, 51, 56, 0.18);">
-          <div class="flex h-full w-full items-center justify-center p-6">
-            <div class="w-full max-w-md rounded-xl bg-surface-container-lowest p-8 editorial-shadow">
-              <div class="mb-6 flex items-center justify-between">
-                <h2 class="font-display text-xl font-bold">Details ergänzen</h2>
-                <button id="close-country-form" type="button" class="rounded-lg bg-surface-container-low px-3 py-1 text-on-surface-variant hover:text-primary">Close</button>
-              </div>
-
-              <p id="overlay-country-subtitle" class="mb-6 text-sm text-on-surface-variant">Fill in nation, nationality, and language for the selected country.</p>
-
-              <form id="country-form" method="post" class="space-y-6">
-                {% csrf_token %}
-                <input type="hidden" name="continent" id="overlay-continent-input" value="{{ active_continent.slug }}">
-                <input type="hidden" name="country" id="overlay-country-input" value="{{ active_country.code }}">
-
-                <div>
-                  <label class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Das Land (The Nation)</label>
-                  <div class="relative">
-                    <input
-                      id="overlay-nation-input"
-                      name="nation"
-                      value="{{ submitted_values.nation }}"
-                      class="w-full rounded-lg bg-surface-container-low px-4 py-3 font-medium text-on-surface transition focus:ring-2 focus:ring-primary/20"
-                      placeholder="z. B. {{ active_country.nation_answers.0 }}"
-                      type="text"
-                      autocomplete="off"
-                    >
-                    {% if evaluation.submitted and evaluation.nation_correct %}
-                      <span class="material-symbols-outlined absolute right-1 top-1 text-primary text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
-                    {% endif %}
-                  </div>
-                  {% if evaluation.submitted and not evaluation.nation_correct %}
-                    <p class="mt-2 text-xs text-on-surface-variant">Expected: {{ active_country.nation_answers|join:" / " }}</p>
-                  {% endif %}
-                </div>
-
-                <div>
-                  <label class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Die Nationalität (The Nationality)</label>
-                  <div class="relative">
-                    <input
-                      id="overlay-nationality-input"
-                      name="nationality"
-                      value="{{ submitted_values.nationality }}"
-                      class="w-full rounded-lg bg-surface-container-low px-4 py-3 font-medium text-on-surface transition focus:ring-2 focus:ring-primary/20"
-                      placeholder="z. B. {{ active_country.nationality_answers.0 }}"
-                      type="text"
-                      autocomplete="off"
-                    >
-                    {% if evaluation.submitted and evaluation.nationality_correct %}
-                      <span class="material-symbols-outlined absolute right-1 top-1 text-primary text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
-                    {% endif %}
-                  </div>
-                  {% if evaluation.submitted and not evaluation.nationality_correct %}
-                    <p class="mt-2 text-xs text-on-surface-variant">Expected: {{ active_country.nationality_answers|join:" / " }}</p>
-                  {% endif %}
-                </div>
-
-                <div>
-                  <label class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Die Sprache (The Language)</label>
-                  <div class="relative">
-                    <input
-                      id="overlay-language-input"
-                      name="language"
-                      value="{{ submitted_values.language }}"
-                      class="w-full rounded-lg bg-surface-container-low px-4 py-3 font-medium text-on-surface transition focus:ring-2 focus:ring-primary/20"
-                      placeholder="z. B. {{ active_country.language_answers.0 }}"
-                      type="text"
-                      autocomplete="off"
-                    >
-                    {% if evaluation.submitted and evaluation.language_correct %}
-                      <span class="material-symbols-outlined absolute right-1 top-1 text-primary text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
-                    {% endif %}
-                  </div>
-                  {% if evaluation.submitted and not evaluation.language_correct %}
-                    <p class="mt-2 text-xs text-on-surface-variant">Expected: {{ active_country.language_answers|join:" / " }}</p>
-                  {% endif %}
-                </div>
-
-                <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-gradient py-4 font-bold text-white shadow-soft hover:opacity-90">
-                  <span>Submit Answers</span>
-                  <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
-              </form>
-            </div>
+          <div class="rounded-lg bg-surface-container-low px-4 py-3">
+            <p class="font-label uppercase tracking-wider">Legend</p>
+            {% if is_test_mode %}
+              <p class="mt-1">Mid tone: countries in your learning list</p>
+            {% else %}
+              <p class="mt-1">Mid tone: countries in your learning list</p>
+            {% endif %}
           </div>
         </div>
       </section>
 
-      <section class="flex flex-col gap-6 lg:col-span-4">
+      <section class="flex flex-col gap-6 lg:col-span-4 lg:sticky lg:top-24">
+        <div class="rounded-xl bg-surface-container-lowest p-8 editorial-shadow">
+          <div class="mb-6">
+            <p class="text-xs font-label uppercase tracking-widest text-on-surface-variant">{% if is_test_mode %}Test Module{% else %}Practice Module{% endif %}</p>
+            <h2 class="mt-2 font-display text-2xl font-bold text-on-surface">{% if is_test_mode %}Namen-Test{% else %}Details ergänzen{% endif %}</h2>
+            <p id="selected-country-attempts" class="mt-3 text-xs text-on-surface-variant">Attempts: {{ active_country_attempts }}</p>
+            <p id="selected-country-score" class="text-xs text-on-surface-variant">Last score: {{ active_country_last_score }}/3</p>
+          </div>
+
+          <div class="mb-6 rounded-lg bg-surface-container-low px-4 py-3">
+            <p class="text-[11px] font-label uppercase tracking-wider text-on-surface-variant">Country (English)</p>
+            <p id="selected-country-english" class="mt-1 font-semibold text-on-surface">{{ active_country.name }}</p>
+          </div>
+
+          <p id="overlay-country-subtitle" class="mb-6 text-sm text-on-surface-variant">{% if is_test_mode %}Write the German country name for the selected country.{% else %}Fill in nation, nationality, and language for the selected country.{% endif %}</p>
+
+          <form id="country-form" method="post" class="space-y-6">
+            {% csrf_token %}
+            <input type="hidden" name="continent" id="overlay-continent-input" value="{{ active_continent.slug }}">
+            <input type="hidden" name="country" id="overlay-country-input" value="{{ active_country.code }}">
+            <input type="hidden" name="mode" value="{{ world_mode }}">
+            {% if is_test_mode %}
+              <input type="hidden" name="test_pool" value="{{ test_pool_serialized }}">
+            {% endif %}
+
+            <div>
+              <label class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Das Land (The Nation)</label>
+              <div class="relative">
+                <input
+                  id="overlay-nation-input"
+                  name="nation"
+                  value="{{ submitted_values.nation }}"
+                  class="w-full rounded-lg bg-surface-container-low px-4 py-3 font-medium text-on-surface transition focus:ring-2 focus:ring-primary/20"
+                  placeholder="{% if is_test_mode %}Write the German country name{% else %}z. B. {{ active_country.nation_answers.0 }}{% endif %}"
+                  type="text"
+                  autocomplete="off"
+                >
+                {% if evaluation.submitted and evaluation.nation_correct %}
+                  <span class="material-symbols-outlined absolute right-1 top-1 text-primary text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
+                {% endif %}
+              </div>
+              {% if not is_test_mode and evaluation.submitted and not evaluation.nation_correct %}
+                <p class="mt-2 text-xs text-on-surface-variant">Expected: {{ active_country.nation_answers|join:" / " }}</p>
+              {% endif %}
+            </div>
+
+            {% if not is_test_mode %}
+              <div>
+                <label class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Die Nationalität (The Nationality)</label>
+                <div class="relative">
+                  <input
+                    id="overlay-nationality-input"
+                    name="nationality"
+                    value="{{ submitted_values.nationality }}"
+                    class="w-full rounded-lg bg-surface-container-low px-4 py-3 font-medium text-on-surface transition focus:ring-2 focus:ring-primary/20"
+                    placeholder="z. B. {{ active_country.nationality_answers.0 }}"
+                    type="text"
+                    autocomplete="off"
+                  >
+                  {% if evaluation.submitted and evaluation.nationality_correct %}
+                    <span class="material-symbols-outlined absolute right-1 top-1 text-primary text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
+                  {% endif %}
+                </div>
+                {% if evaluation.submitted and not evaluation.nationality_correct %}
+                  <p class="mt-2 text-xs text-on-surface-variant">Expected: {{ active_country.nationality_answers|join:" / " }}</p>
+                {% endif %}
+              </div>
+
+              <div>
+                <label class="mb-2 block text-xs font-label uppercase tracking-widest text-on-surface-variant">Die Sprache (The Language)</label>
+                <div class="relative">
+                  <input
+                    id="overlay-language-input"
+                    name="language"
+                    value="{{ submitted_values.language }}"
+                    class="w-full rounded-lg bg-surface-container-low px-4 py-3 font-medium text-on-surface transition focus:ring-2 focus:ring-primary/20"
+                    placeholder="z. B. {{ active_country.language_answers.0 }}"
+                    type="text"
+                    autocomplete="off"
+                  >
+                  {% if evaluation.submitted and evaluation.language_correct %}
+                    <span class="material-symbols-outlined absolute right-1 top-1 text-primary text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
+                  {% endif %}
+                </div>
+                {% if evaluation.submitted and not evaluation.language_correct %}
+                  <p class="mt-2 text-xs text-on-surface-variant">Expected: {{ active_country.language_answers|join:" / " }}</p>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-gradient py-4 font-bold text-white shadow-soft hover:opacity-90">
+              <span>Submit Answers</span>
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+          </form>
+        </div>
+
         <div class="rounded-xl bg-surface-container-lowest p-8 editorial-shadow">
           <div class="mb-6">
             <h2 class="mb-2 font-display text-xl font-bold">How to use</h2>
-            <p class="text-sm leading-relaxed text-on-surface-variant">Click a highlighted country on the real map. The form opens as an overlay where you enter nation, nationality, and language.</p>
+            {% if is_test_mode %}
+              <p class="text-sm leading-relaxed text-on-surface-variant">Only 10 countries are selectable in test mode. Click one and write the German country name.</p>
+            {% else %}
+              <p class="text-sm leading-relaxed text-on-surface-variant">Click any highlighted country on the map and complete nation, nationality, and language in the module on the right.</p>
+            {% endif %}
           </div>
           <ul class="space-y-2 text-sm text-on-surface-variant">
-            <li>1. Pick a continent.</li>
-            <li>2. Click one of its highlighted countries.</li>
-            <li>3. Submit all three answers in the overlay form.</li>
+            {% if is_test_mode %}
+              <li>1. Start test mode from the top button.</li>
+              <li>2. Click one of the 10 selectable countries.</li>
+              <li>3. Submit the correct German country name.</li>
+            {% else %}
+              <li>1. Click any highlighted country on the map.</li>
+              <li>2. Fill nation, nationality, and language.</li>
+              <li>3. Submit all three answers in the right panel.</li>
+            {% endif %}
           </ul>
         </div>
 
@@ -268,6 +338,7 @@
 
   {{ countries|json_script:"world-country-data" }}
   {{ mastered_codes|json_script:"world-mastered-codes" }}
+  {{ learning_codes|json_script:"world-learning-codes" }}
 
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -276,10 +347,8 @@
   ></script>
   <script>
     (function () {
-      const overlay = document.getElementById("country-form-overlay");
-      const openButton = document.getElementById("open-country-form");
-      const closeButton = document.getElementById("close-country-form");
       const selectedCountryLabel = document.getElementById("selected-country-label");
+      const selectedCountryEnglish = document.getElementById("selected-country-english");
       const selectedCountryAttempts = document.getElementById("selected-country-attempts");
       const selectedCountryScore = document.getElementById("selected-country-score");
       const overlayCountryInput = document.getElementById("overlay-country-input");
@@ -289,16 +358,18 @@
       const languageInput = document.getElementById("overlay-language-input");
       const subtitle = document.getElementById("overlay-country-subtitle");
 
-      if (!overlay || typeof L === "undefined") {
+      if (typeof L === "undefined") {
         return;
       }
 
+      const isTestMode = {{ is_test_mode|yesno:"true,false" }};
       const evaluationSubmitted = {{ evaluation.submitted|yesno:"true,false" }};
       const activeContinent = "{{ active_continent.slug }}";
       const activeCountryCode = "{{ active_country.code }}";
       const mapDataUrl = "{% static 'core/data/world.geo.json' %}";
       const countries = JSON.parse(document.getElementById("world-country-data").textContent);
       const masteredCodes = new Set(JSON.parse(document.getElementById("world-mastered-codes").textContent));
+      const learningCodes = new Set(JSON.parse(document.getElementById("world-learning-codes").textContent));
       const countriesByCode = {};
       const geoNameToCode = {};
 
@@ -331,7 +402,12 @@
         if (!country || !selectedCountryLabel) {
           return;
         }
-        selectedCountryLabel.textContent = `${country.nation_answers[0]} (${country.name})`;
+        selectedCountryLabel.textContent = isTestMode
+          ? `${country.name}`
+          : `${country.nation_answers[0]} (${country.name})`;
+        if (selectedCountryEnglish) {
+          selectedCountryEnglish.textContent = country.name;
+        }
         if (selectedCountryAttempts) {
           selectedCountryAttempts.textContent = `Attempts: ${country.attempts}`;
         }
@@ -346,28 +422,31 @@
           return;
         }
         selectedCode = code;
-        overlayContinentInput.value = activeContinent;
+        overlayContinentInput.value = country.continent_slug || activeContinent;
         overlayCountryInput.value = code;
-        subtitle.textContent = `Fill in nation, nationality, and language for ${country.name}.`;
+        if (subtitle) {
+          subtitle.textContent = isTestMode
+            ? `Write the German country name for ${country.name}.`
+            : `Fill in nation, nationality, and language for ${country.name}.`;
+        }
         updateSelectionText(code);
 
         if (!evaluationSubmitted || code !== activeCountryCode) {
-          nationInput.value = "";
-          nationalityInput.value = "";
-          languageInput.value = "";
-          nationInput.placeholder = `z. B. ${country.nation_answers[0]}`;
-          nationalityInput.placeholder = `z. B. ${country.nationality_answers[0]}`;
-          languageInput.placeholder = `z. B. ${country.language_answers[0]}`;
+          if (nationInput) {
+            nationInput.value = "";
+            nationInput.placeholder = isTestMode
+              ? "Write the German country name"
+              : `z. B. ${country.nation_answers[0]}`;
+          }
+          if (nationalityInput) {
+            nationalityInput.value = "";
+            nationalityInput.placeholder = `z. B. ${country.nationality_answers[0]}`;
+          }
+          if (languageInput) {
+            languageInput.value = "";
+            languageInput.placeholder = `z. B. ${country.language_answers[0]}`;
+          }
         }
-      }
-
-      function openOverlay(code) {
-        applyCountryToForm(code || selectedCode);
-        overlay.classList.remove("hidden");
-      }
-
-      function closeOverlay() {
-        overlay.classList.add("hidden");
       }
 
       function featureStyle(feature) {
@@ -381,11 +460,15 @@
           return { color: "#ffffff", weight: 1, fillColor: "#496177", fillOpacity: 0.95 };
         }
 
-        if (masteredCodes.has(code)) {
-          return { color: "#ffffff", weight: 1, fillColor: "#86a0b8", fillOpacity: 0.9 };
+        if (learningCodes.has(code)) {
+          return { color: "#ffffff", weight: 1, fillColor: "#86a0b8", fillOpacity: 0.92 };
         }
 
-        return { color: "#ffffff", weight: 1, fillColor: "#cfd7de", fillOpacity: 0.85 };
+        if (masteredCodes.has(code)) {
+          return { color: "#ffffff", weight: 1, fillColor: "#b5c3cf", fillOpacity: 0.82 };
+        }
+
+        return { color: "#ffffff", weight: 1, fillColor: "#dfe5ea", fillOpacity: 0.5 };
       }
 
       function refreshMapStyles() {
@@ -413,7 +496,7 @@
               }
 
               layer.on("click", () => {
-                openOverlay(code);
+                applyCountryToForm(code);
                 refreshMapStyles();
               });
               layer.on("mouseover", () => {
@@ -435,25 +518,7 @@
           }
         });
 
-      if (openButton) {
-        openButton.addEventListener("click", () => openOverlay(selectedCode));
-      }
-
-      if (closeButton) {
-        closeButton.addEventListener("click", closeOverlay);
-      }
-
-      overlay.addEventListener("click", (event) => {
-        if (event.target === overlay) {
-          closeOverlay();
-        }
-      });
-
-      if (evaluationSubmitted) {
-        openOverlay(activeCountryCode);
-      } else {
-        applyCountryToForm(activeCountryCode);
-      }
+      applyCountryToForm(activeCountryCode);
     })();
   </script>
 </div>
@@ -471,7 +536,7 @@
     <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">public</span>
     <span class="font-label text-[10px] font-bold uppercase tracking-tighter">Practice</span>
   </a>
-  <a href="/course-path/" class="flex flex-col items-center gap-1 text-on-surface-variant">
+  <a href="{{ course_nav_url }}" class="flex flex-col items-center gap-1 text-on-surface-variant">
     <span class="material-symbols-outlined">insights</span>
     <span class="font-label text-[10px] uppercase tracking-tighter">Stats</span>
   </a>

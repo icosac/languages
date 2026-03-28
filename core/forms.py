@@ -123,7 +123,7 @@ class AdminAccessRequestForm(forms.Form):
 
 class ProfileLLMSettingsForm(forms.Form):
     MODEL_CHOICES = [
-        ("lumina", "Lumina"),
+        ("none", "None"),
         ("chatgpt", "ChatGPT"),
         ("claude", "Claude"),
     ]
@@ -145,7 +145,13 @@ class ProfileLLMSettingsForm(forms.Form):
         api_key = (cleaned_data.get("api_key", "") or "").strip()
 
         if llm_model in {"chatgpt", "claude"} and not api_key and not self.has_existing_key:
-            raise forms.ValidationError("API key is required for ChatGPT or Claude.")
+            raise forms.ValidationError("A valid API key is required for ChatGPT or Claude.")
+
+        if api_key:
+            if llm_model == "chatgpt" and not (api_key.startswith("sk-") and len(api_key) >= 20):
+                self.add_error("api_key", "Enter a valid OpenAI API key (must start with 'sk-').")
+            elif llm_model == "claude" and not (api_key.startswith("sk-ant-") and len(api_key) >= 20):
+                self.add_error("api_key", "Enter a valid Claude API key (must start with 'sk-ant-').")
 
         cleaned_data["api_key"] = api_key
         return cleaned_data

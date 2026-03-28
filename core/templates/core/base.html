@@ -11,6 +11,100 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   {% block extra_head %}{% endblock %}
   <link rel="stylesheet" href="{% static 'core/css/tailwind.css' %}">
+  <style>
+    .special-char-launcher {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 80;
+    }
+
+    .special-char-toggle {
+      width: 58px;
+      height: 58px;
+      border: none;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #314e66, #5d7f9b);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: grab;
+      box-shadow: 0 12px 28px rgba(31, 48, 61, 0.3);
+      touch-action: none;
+      user-select: none;
+    }
+
+    .special-char-toggle:active {
+      cursor: grabbing;
+    }
+
+    .special-char-panel {
+      position: fixed;
+      min-width: 240px;
+      max-width: min(92vw, 320px);
+      border-radius: 14px;
+      border: 1px solid rgba(86, 109, 128, 0.28);
+      background: #f8fafc;
+      box-shadow: 0 16px 34px rgba(32, 45, 56, 0.24);
+      padding: 10px;
+      z-index: 81;
+    }
+
+    .special-char-panel[hidden] {
+      display: none;
+    }
+
+    .special-char-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: #2f4254;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .special-char-close {
+      border: none;
+      background: transparent;
+      color: #5a6f82;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 6px;
+    }
+
+    .special-char-close:hover {
+      background: #e7edf3;
+      color: #334759;
+    }
+
+    .special-char-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .special-char-btn {
+      border: 1px solid #cbd6df;
+      background: #ffffff;
+      color: #223240;
+      font-size: 18px;
+      line-height: 1;
+      border-radius: 8px;
+      padding: 7px 0;
+      cursor: pointer;
+    }
+
+    .special-char-btn:hover {
+      background: #edf3f8;
+      border-color: #8ea3b6;
+    }
+  </style>
 </head>
 <body class="{% block body_class %}shell{% endblock %}">
   {% block site_nav %}
@@ -19,6 +113,295 @@
   <main class="{% block main_class %}mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14{% endblock %}">
     {% block content %}{% endblock %}
   </main>
+
+  <div id="special-char-launcher" class="special-char-launcher" aria-label="Special character helper">
+    <button
+      id="special-char-toggle"
+      class="special-char-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="special-char-panel"
+      title="Special characters"
+    >
+      äöß
+    </button>
+  </div>
+
+  <section id="special-char-panel" class="special-char-panel" hidden aria-label="Special characters">
+    <div class="special-char-panel-head">
+      <span>Special Chars</span>
+      <button id="special-char-close" class="special-char-close" type="button" aria-label="Close">×</button>
+    </div>
+    <div id="special-char-grid" class="special-char-grid"></div>
+  </section>
+
   <script src="{% static 'core/js/main.js' %}"></script>
+  <script>
+    (function () {
+      const launcher = document.getElementById("special-char-launcher");
+      const toggle = document.getElementById("special-char-toggle");
+      const panel = document.getElementById("special-char-panel");
+      const closeBtn = document.getElementById("special-char-close");
+      const grid = document.getElementById("special-char-grid");
+      if (!launcher || !toggle || !panel || !closeBtn || !grid) {
+        return;
+      }
+
+      const storageKey = "lumina.special-char.launcher.v1";
+      const chars = [
+        "ä", "ö", "ü", "ß", "Ä", "Ö", "Ü",
+        "é", "è", "ê", "à", "ç", "ñ", "ô",
+        "î", "ï", "û", "ù", "œ", "æ", "¡",
+        "¿", "«", "»", "á", "í", "ó", "ú",
+      ];
+
+      let isOpen = false;
+      let isPointerDown = false;
+      let didDrag = false;
+      let startX = 0;
+      let startY = 0;
+      let dragOffsetX = 0;
+      let dragOffsetY = 0;
+      let lastFocusedField = null;
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function positionLauncher(x, y, persist) {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const rect = launcher.getBoundingClientRect();
+        const width = rect.width || 58;
+        const height = rect.height || 58;
+        const safeX = clamp(x, 8, Math.max(8, vw - width - 8));
+        const safeY = clamp(y, 8, Math.max(8, vh - height - 8));
+        launcher.style.left = safeX + "px";
+        launcher.style.top = safeY + "px";
+        if (persist) {
+          localStorage.setItem(storageKey, JSON.stringify({ x: safeX, y: safeY }));
+        }
+        if (isOpen) {
+          positionPanel();
+        }
+      }
+
+      function restoreLauncherPosition() {
+        let x = window.innerWidth - 78;
+        let y = window.innerHeight - 132;
+        try {
+          const raw = localStorage.getItem(storageKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+              x = parsed.x;
+              y = parsed.y;
+            }
+          }
+        } catch (error) {
+          // ignore invalid stored position
+        }
+        positionLauncher(x, y, false);
+      }
+
+      function buildGrid() {
+        for (const character of chars) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "special-char-btn";
+          button.dataset.char = character;
+          button.textContent = character;
+          button.addEventListener("mousedown", function (event) {
+            event.preventDefault();
+          });
+          button.addEventListener("click", function () {
+            insertCharacter(character);
+          });
+          grid.appendChild(button);
+        }
+      }
+
+      function positionPanel() {
+        panel.hidden = false;
+        const launchRect = launcher.getBoundingClientRect();
+        const panelRect = panel.getBoundingClientRect();
+        const margin = 10;
+        const viewMargin = 8;
+
+        let left = launchRect.left + (launchRect.width / 2) - (panelRect.width / 2);
+        left = clamp(left, viewMargin, Math.max(viewMargin, window.innerWidth - panelRect.width - viewMargin));
+
+        let top = launchRect.top - panelRect.height - margin;
+        if (top < viewMargin) {
+          top = launchRect.bottom + margin;
+        }
+        top = clamp(top, viewMargin, Math.max(viewMargin, window.innerHeight - panelRect.height - viewMargin));
+
+        panel.style.left = left + "px";
+        panel.style.top = top + "px";
+      }
+
+      function openPanel() {
+        isOpen = true;
+        toggle.setAttribute("aria-expanded", "true");
+        positionPanel();
+      }
+
+      function closePanel() {
+        isOpen = false;
+        toggle.setAttribute("aria-expanded", "false");
+        panel.hidden = true;
+      }
+
+      function togglePanel() {
+        if (isOpen) {
+          closePanel();
+        } else {
+          openPanel();
+        }
+      }
+
+      function isEditableField(element) {
+        if (!element) {
+          return false;
+        }
+        if (element.tagName === "TEXTAREA") {
+          return true;
+        }
+        if (element.tagName === "INPUT") {
+          const inputType = (element.getAttribute("type") || "text").toLowerCase();
+          return ["", "text", "search", "url", "email", "tel", "password"].includes(inputType);
+        }
+        return element.isContentEditable === true;
+      }
+
+      function getTargetField() {
+        if (isEditableField(document.activeElement)) {
+          return document.activeElement;
+        }
+        if (isEditableField(lastFocusedField)) {
+          return lastFocusedField;
+        }
+        return null;
+      }
+
+      function insertCharacter(character) {
+        const field = getTargetField();
+        if (!field) {
+          return;
+        }
+
+        if (field.tagName === "INPUT" || field.tagName === "TEXTAREA") {
+          const value = field.value || "";
+          const start = typeof field.selectionStart === "number" ? field.selectionStart : value.length;
+          const end = typeof field.selectionEnd === "number" ? field.selectionEnd : start;
+          field.value = value.slice(0, start) + character + value.slice(end);
+          const nextPos = start + character.length;
+          field.focus();
+          field.setSelectionRange(nextPos, nextPos);
+          field.dispatchEvent(new Event("input", { bubbles: true }));
+          return;
+        }
+
+        if (field.isContentEditable) {
+          field.focus();
+          const selection = window.getSelection();
+          if (!selection || selection.rangeCount === 0) {
+            return;
+          }
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          const textNode = document.createTextNode(character);
+          range.insertNode(textNode);
+          range.setStartAfter(textNode);
+          range.setEndAfter(textNode);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          field.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      }
+
+      toggle.addEventListener("pointerdown", function (event) {
+        if (event.button !== 0) {
+          return;
+        }
+        event.preventDefault();
+        isPointerDown = true;
+        didDrag = false;
+        startX = event.clientX;
+        startY = event.clientY;
+        const rect = launcher.getBoundingClientRect();
+        dragOffsetX = event.clientX - rect.left;
+        dragOffsetY = event.clientY - rect.top;
+      });
+
+      window.addEventListener("pointermove", function (event) {
+        if (!isPointerDown) {
+          return;
+        }
+        if (Math.abs(event.clientX - startX) > 5 || Math.abs(event.clientY - startY) > 5) {
+          didDrag = true;
+        }
+        if (!didDrag) {
+          return;
+        }
+        positionLauncher(event.clientX - dragOffsetX, event.clientY - dragOffsetY, false);
+      });
+
+      window.addEventListener("pointerup", function () {
+        if (!isPointerDown) {
+          return;
+        }
+        if (didDrag) {
+          const rect = launcher.getBoundingClientRect();
+          positionLauncher(rect.left, rect.top, true);
+        }
+        isPointerDown = false;
+      });
+
+      toggle.addEventListener("click", function () {
+        if (didDrag) {
+          didDrag = false;
+          return;
+        }
+        togglePanel();
+      });
+
+      closeBtn.addEventListener("click", function () {
+        closePanel();
+      });
+
+      document.addEventListener("focusin", function (event) {
+        if (isEditableField(event.target)) {
+          lastFocusedField = event.target;
+        }
+      });
+
+      document.addEventListener("pointerdown", function (event) {
+        if (!isOpen) {
+          return;
+        }
+        if (panel.contains(event.target) || launcher.contains(event.target)) {
+          return;
+        }
+        closePanel();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && isOpen) {
+          closePanel();
+        }
+      });
+
+      window.addEventListener("resize", function () {
+        const rect = launcher.getBoundingClientRect();
+        positionLauncher(rect.left, rect.top, false);
+      });
+
+      buildGrid();
+      restoreLauncherPosition();
+      closePanel();
+    })();
+  </script>
 </body>
 </html>

@@ -211,7 +211,115 @@ class VocabularyFeatureTests(TestCase):
                 score_delta=3,
             ).exists()
         )
-        self.assertGreaterEqual(submit_response.context["continent_progress_percent"], 20)
+        self.assertGreater(submit_response.context["continent_progress_percent"], 0)
+
+    def test_world_module_learning_mode_exposes_all_countries(self) -> None:
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("lesson_world"))
+        self.assertEqual(response.status_code, 200)
+
+        countries = response.context["countries"]
+        self.assertGreaterEqual(len(countries), 20)
+        codes = {country["code"] for country in countries}
+        self.assertIn("DE", codes)
+        self.assertIn("AU", codes)
+        self.assertFalse(response.context["is_test_mode"])
+
+    def test_world_module_test_mode_uses_ten_country_pool_and_name_scoring(self) -> None:
+        self.client.force_login(self.user)
+
+        for code in [
+            "DE", "FR", "ES", "IT", "AT", "CN", "JP", "IN", "KR", "MA",
+        ]:
+            UserImprovement.objects.get_or_create(
+                user=self.user,
+                category=f"world_learning:{code}",
+                defaults={"score_delta": 0, "encrypted_note": ""},
+            )
+
+        response = self.client.get(reverse("lesson_world"), {"mode": "test"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_test_mode"])
+
+        pool_codes = response.context["test_pool_codes"]
+        self.assertEqual(len(pool_codes), 10)
+        countries = response.context["countries"]
+        self.assertEqual(len(countries), 10)
+
+        target_code = pool_codes[0]
+        target_country = next(country for country in countries if country["code"] == target_code)
+        submit_response = self.client.post(
+            reverse("lesson_world"),
+            {
+                "mode": "test",
+                "test_pool": ",".join(pool_codes),
+                "continent": target_country["continent_slug"],
+                "country": target_code,
+                "nation": target_country["nation_answers"][0],
+                "nationality": "",
+                "language": "",
+            },
+            follow=True,
+        )
+        self.assertEqual(submit_response.status_code, 200)
+        self.assertContains(submit_response, "marked as completed")
+        self.assertTrue(
+            UserImprovement.objects.filter(
+                user=self.user,
+                category=f"world_module:{target_code}",
+                score_delta=3,
+            ).exists()
+        )
+
+    def test_world_module_add_learning_country_by_english_name(self) -> None:
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("lesson_world"),
+            {
+                "action": "add_learning_country",
+                "learning_country_name": "Japan",
+                "learning_nationality_masculine": "Japaner",
+                "learning_nationality_feminine": "Japanerin",
+                "learning_language": "Japanisch",
+                "mode": "learn",
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "added to your learning list")
+        entry = UserImprovement.objects.filter(
+            user=self.user,
+            category="world_learning:JP",
+        ).first()
+        self.assertIsNotNone(entry)
+        payload = json.loads(entry.encrypted_note)
+        self.assertEqual(payload["nationality_masculine"], "Japaner")
+        self.assertEqual(payload["nationality_feminine"], "Japanerin")
+        self.assertEqual(payload["language"], "Japanisch")
+        self.assertIn("JP", response.context["learning_country_codes"])
+
+    def test_world_module_add_learning_country_requires_all_fields(self) -> None:
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("lesson_world"),
+            {
+                "action": "add_learning_country",
+                "learning_country_name": "Japan",
+                "learning_nationality_masculine": "Japaner",
+                "learning_nationality_feminine": "",
+                "learning_language": "Japanisch",
+                "mode": "learn",
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Please provide country, nationality masculine, nationality feminine, and language.")
+        self.assertFalse(
+            UserImprovement.objects.filter(
+                user=self.user,
+                category="world_learning:JP",
+            ).exists()
+        )
 
 
 class LLMApiTests(TestCase):

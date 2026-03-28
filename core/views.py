@@ -68,6 +68,7 @@ SEED_LEXICON_ENTRIES = [
 SEEDED_WORD_TYPES = {entry["word"].strip().lower(): entry["word_type"] for entry in SEED_LEXICON_ENTRIES}
 
 WORLD_PROGRESS_CATEGORY_PREFIX = "world_module:"
+WORLD_LEARNING_CATEGORY_PREFIX = "world_learning:"
 
 WORLD_CONTINENTS = [
     {
@@ -852,23 +853,178 @@ def lesson_page(request):
 
 @login_required
 def world_module_page(request):
-    requested_continent = (request.GET.get("continent", "") or "").strip().lower()
-    requested_country = (request.GET.get("country", "") or "").strip().upper()
+    source = request.POST if request.method == "POST" else request.GET
+    requested_mode = (source.get("mode", "") or "").strip().lower()
+    if requested_mode not in {"learn", "test"}:
+        requested_mode = "learn"
+    is_test_mode = requested_mode == "test"
+    requested_country = (source.get("country", "") or "").strip().upper()
+    raw_test_pool = (source.get("test_pool", "") or "").strip()
 
-    if request.method == "POST":
-        requested_continent = (request.POST.get("continent", "") or "").strip().lower()
-        requested_country = (request.POST.get("country", "") or "").strip().upper()
+    all_countries = []
+    countries_by_code = {}
+    country_to_continent = {}
+    geo_name_to_code = {}
+    for continent in WORLD_CONTINENTS:
+        for country in continent["countries"]:
+            country_row = {
+                **country,
+                "continent_slug": continent["slug"],
+                "continent_label": continent["label"],
+            }
+            all_countries.append(country_row)
+            countries_by_code[country_row["code"]] = country_row
+            country_to_continent[country_row["code"]] = continent["slug"]
 
-    active_continent = WORLD_CONTINENTS_BY_SLUG.get(requested_continent, WORLD_CONTINENTS[0])
-    continent_countries_by_code = {country["code"]: country for country in active_continent["countries"]}
+            aliases = [country_row["name"], *(country_row.get("geo_names") or [])]
+            for alias in aliases:
+                normalized_alias = _normalize_world_answer(alias)
+                if normalized_alias and normalized_alias not in geo_name_to_code:
+                    geo_name_to_code[normalized_alias] = country_row["code"]
 
-    if requested_country and requested_country not in continent_countries_by_code:
-        fallback_continent_slug = WORLD_COUNTRY_TO_CONTINENT.get(requested_country)
-        if fallback_continent_slug:
-            active_continent = WORLD_CONTINENTS_BY_SLUG[fallback_continent_slug]
-            continent_countries_by_code = {country["code"]: country for country in active_continent["countries"]}
+    all_country_codes = [country["code"] for country in all_countries]
 
-    active_country = continent_countries_by_code.get(requested_country) or active_continent["countries"][0]
+    learning_rows = UserImprovement.objects.filter(
+        user=request.user,
+        category__startswith=WORLD_LEARNING_CATEGORY_PREFIX,
+    ).order_by("created_at")
+    learning_country_codes = []
+    learning_country_seen = set()
+    learning_country_payloads = {}
+    for row in learning_rows:
+        code = (row.category[len(WORLD_LEARNING_CATEGORY_PREFIX):] or "").upper()
+        if code not in countries_by_code or code in learning_country_seen:
+            continue
+
+        payload = {}
+        if row.encrypted_note:
+            try:
+                parsed_payload = json.loads(row.encrypted_note)
+                if isinstance(parsed_payload, dict):
+                    payload = parsed_payload
+            except (TypeError, ValueError):
+                payload = {}
+
+        learning_country_payloads[code] = {
+            "country_name": (payload.get("country_name") or countries_by_code[code]["name"] or "").strip(),
+            "nationality_masculine": (payload.get("nationality_masculine") or "").strip(),
+            "nationality_feminine": (payload.get("nationality_feminine") or "").strip(),
+            "language": (payload.get("language") or "").strip(),
+        }
+        learning_country_seen.add(code)
+        learning_country_codes.append(code)
+
+    learning_country_set = set(learning_country_codes)
+    learning_countries = []
+    for code in learning_country_codes:
+        country = countries_by_code[code]
+        payload = learning_country_payloads.get(code, {})
+        learning_countries.append(
+            {
+                **country,
+                "learning_country_name": payload.get("country_name") or country["name"],
+                "learning_nationality_masculine": payload.get("nationality_masculine", ""),
+                "learning_nationality_feminine": payload.get("nationality_feminine", ""),
+                "learning_language": payload.get("language", ""),
+            }
+        )
+
+    if request.method == "POST" and (request.POST.get("action", "") or "").strip() == "add_learning_country":
+        submitted_country_name = (request.POST.get("learning_country_name", "") or "").strip()
+        submitted_nationality_masculine = (request.POST.get("learning_nationality_masculine", "") or "").strip()
+        submitted_nationality_feminine = (request.POST.get("learning_nationality_feminine", "") or "").strip()
+        submitted_language = (request.POST.get("learning_language", "") or "").strip()
+
+        if (
+            not submitted_country_name
+            or not submitted_nationality_masculine
+            or not submitted_nationality_feminine
+            or not submitted_language
+        ):
+            messages.error(
+                request,
+                "Please provide country, nationality masculine, nationality feminine, and language.",
+            )
+        else:
+            normalized_country_name = _normalize_world_answer(submitted_country_name)
+            matched_code = geo_name_to_code.get(normalized_country_name)
+            if not matched_code:
+                messages.error(request, "Country not found. Use an English country name from the world map.")
+            else:
+                matched_country = countries_by_code[matched_code]
+                category = f"{WORLD_LEARNING_CATEGORY_PREFIX}{matched_code}"
+                note_payload = json.dumps(
+                    {
+                        "country_name": matched_country["name"],
+                        "nationality_masculine": submitted_nationality_masculine,
+                        "nationality_feminine": submitted_nationality_feminine,
+                        "language": submitted_language,
+                    }
+                )
+                existing_row = UserImprovement.objects.filter(
+                    user=request.user,
+                    category=category,
+                ).first()
+                if existing_row is None:
+                    UserImprovement.objects.create(
+                        user=request.user,
+                        category=category,
+                        score_delta=0,
+                        encrypted_note=note_payload,
+                    )
+                    messages.success(request, f"{matched_country['name']} added to your learning list.")
+                else:
+                    existing_row.encrypted_note = note_payload
+                    existing_row.save(update_fields=["encrypted_note"])
+                    messages.info(request, f"{matched_country['name']} updated in your learning list.")
+
+        redirect_url = "/lesson/world/"
+        if requested_mode == "test":
+            redirect_url = "/lesson/world/?mode=test"
+        return redirect(redirect_url)
+
+    if is_test_mode and not learning_country_codes:
+        messages.error(request, "Add at least one country to your learning list before starting test mode.")
+        is_test_mode = False
+        requested_mode = "learn"
+
+    def _build_test_pool(raw_codes: str, candidate_codes: list[str]) -> list[str]:
+        pool_codes = []
+        seen_codes = set()
+        candidate_set = set(candidate_codes)
+        for raw_code in raw_codes.split(","):
+            code = (raw_code or "").strip().upper()
+            if not code or code in seen_codes or code not in candidate_set:
+                continue
+            seen_codes.add(code)
+            pool_codes.append(code)
+
+        target_size = min(10, len(candidate_codes))
+        if len(pool_codes) >= target_size:
+            return pool_codes[:target_size]
+
+        remaining_codes = [code for code in candidate_codes if code not in seen_codes]
+        needed = target_size - len(pool_codes)
+        if remaining_codes and needed > 0:
+            pool_codes.extend(secrets.SystemRandom().sample(remaining_codes, min(needed, len(remaining_codes))))
+        return pool_codes
+
+    test_pool_size = min(10, len(learning_country_codes))
+    test_pool_codes = _build_test_pool(raw_test_pool, learning_country_codes) if is_test_mode else []
+
+    allowed_country_codes = test_pool_codes if is_test_mode else all_country_codes
+    if not allowed_country_codes:
+        allowed_country_codes = all_country_codes
+    allowed_country_code_set = set(allowed_country_codes)
+
+    if requested_country and requested_country not in allowed_country_code_set:
+        requested_country = ""
+
+    active_country = countries_by_code.get(requested_country)
+    if active_country is None:
+        active_country = countries_by_code[allowed_country_codes[0]]
+
+    active_continent = WORLD_CONTINENTS_BY_SLUG[country_to_continent[active_country["code"]]]
 
     submitted_values = {"nation": "", "nationality": "", "language": ""}
     evaluation = {
@@ -886,22 +1042,27 @@ def world_module_page(request):
             "language": (request.POST.get("language", "") or "").strip(),
         }
         nation_correct = _world_answer_matches(submitted_values["nation"], active_country["nation_answers"])
-        nationality_correct = _world_answer_matches(
-            submitted_values["nationality"],
-            active_country["nationality_answers"],
-        )
-        language_correct = _world_answer_matches(
-            submitted_values["language"],
-            active_country["language_answers"],
-        )
-        score = int(nation_correct) + int(nationality_correct) + int(language_correct)
+        if is_test_mode:
+            nationality_correct = False
+            language_correct = False
+            score = 3 if nation_correct else 0
+        else:
+            nationality_correct = _world_answer_matches(
+                submitted_values["nationality"],
+                active_country["nationality_answers"],
+            )
+            language_correct = _world_answer_matches(
+                submitted_values["language"],
+                active_country["language_answers"],
+            )
+            score = int(nation_correct) + int(nationality_correct) + int(language_correct)
 
         UserImprovement.objects.create(
             user=request.user,
             category=f"{WORLD_PROGRESS_CATEGORY_PREFIX}{active_country['code']}",
             score_delta=score,
             encrypted_note=(
-                f"{active_continent['slug']}|{submitted_values['nation']}|"
+                f"{active_continent['slug']}|{requested_mode}|{submitted_values['nation']}|"
                 f"{submitted_values['nationality']}|{submitted_values['language']}"
             ),
         )
@@ -913,7 +1074,14 @@ def world_module_page(request):
             "language_correct": language_correct,
             "score": score,
         }
-        if score == 3:
+        if is_test_mode and nation_correct:
+            messages.success(
+                request,
+                f"Correct. {active_country['name']} has been marked as completed for this test.",
+            )
+        elif is_test_mode:
+            messages.error(request, "Not correct yet. Keep practicing and try another highlighted country.")
+        elif score == 3:
             messages.success(
                 request,
                 f"Excellent. {active_country['name']} has been marked as completed for this module.",
@@ -924,38 +1092,35 @@ def world_module_page(request):
             messages.info(request, "Good progress. Refine and try again to complete all three fields.")
 
     progress = _world_progress_for_user(request.user)
-    continent_tabs = []
-    for continent in WORLD_CONTINENTS:
-        completed, total, percent = _world_continent_metrics(continent, progress)
-        continent_tabs.append(
-            {
-                "slug": continent["slug"],
-                "label": continent["label"],
-                "is_active": continent["slug"] == active_continent["slug"],
-                "completed": completed,
-                "total": total,
-                "percent": percent,
-            }
-        )
+    world_total = len(all_countries)
+    world_completed = sum(
+        1 for country in all_countries if progress.get(country["code"], {}).get("best_score", 0) >= 3
+    )
+    world_percent = int((world_completed / (world_total or 1)) * 100)
 
-    active_completed, active_total, active_percent = _world_continent_metrics(active_continent, progress)
     countries = []
-    for country in active_continent["countries"]:
+    for country_code in allowed_country_codes:
+        country = countries_by_code[country_code]
         country_progress = progress.get(country["code"], {})
         countries.append(
             {
                 **country,
                 "is_active": country["code"] == active_country["code"],
                 "is_mastered": country_progress.get("best_score", 0) >= 3,
+                "is_learning": country["code"] in learning_country_set,
                 "attempts": country_progress.get("attempts", 0),
                 "last_score": country_progress.get("last_score", 0),
             }
         )
+
     mastered_codes = [country["code"] for country in countries if country["is_mastered"]]
+    learning_codes = [country["code"] for country in countries if country["is_learning"]]
     active_progress = progress.get(active_country["code"], {})
 
+    recently_source_codes = learning_country_codes if learning_country_codes else all_country_codes
     completed_rows = []
-    for country in active_continent["countries"]:
+    for code in recently_source_codes:
+        country = countries_by_code[code]
         country_progress = progress.get(country["code"], {})
         if country_progress.get("completed_at"):
             completed_rows.append(
@@ -964,11 +1129,13 @@ def world_module_page(request):
                     "completed_at": country_progress["completed_at"],
                 }
             )
+
     completed_rows.sort(key=lambda row: row["completed_at"], reverse=True)
     recently_learned = completed_rows[:4]
     if len(recently_learned) < 4:
         existing_codes = {row["code"] for row in recently_learned}
-        for country in active_continent["countries"]:
+        for code in recently_source_codes:
+            country = countries_by_code[code]
             if country["code"] in existing_codes:
                 continue
             recently_learned.append(country)
@@ -981,12 +1148,20 @@ def world_module_page(request):
             "page_title": "Countries & Nationalities",
             "active_continent": active_continent,
             "active_country": active_country,
-            "continent_tabs": continent_tabs,
-            "continent_progress_percent": active_percent,
-            "continent_completed": active_completed,
-            "continent_total": active_total,
+            "continent_progress_percent": world_percent,
+            "continent_completed": world_completed,
+            "continent_total": world_total,
             "countries": countries,
             "mastered_codes": mastered_codes,
+            "learning_codes": learning_codes,
+            "learning_country_codes": learning_country_codes,
+            "learning_countries": learning_countries,
+            "learning_country_total": len(learning_country_codes),
+            "is_test_mode": is_test_mode,
+            "world_mode": requested_mode,
+            "test_pool_codes": test_pool_codes,
+            "test_pool_serialized": ",".join(test_pool_codes),
+            "test_pool_size": test_pool_size,
             "active_country_attempts": active_progress.get("attempts", 0),
             "active_country_last_score": active_progress.get("last_score", 0),
             "submitted_values": submitted_values,
@@ -995,7 +1170,6 @@ def world_module_page(request):
         }
     )
     return render(request, "core/pages/world_module.html", context)
-
 
 @login_required
 def vocabulary_lexicon_page(request):

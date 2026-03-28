@@ -14,7 +14,7 @@ class UserProfile(models.Model):
 	weekly_goal = models.CharField(max_length=40, default="5 lessons")
 	streak_days = models.PositiveIntegerField(default=0)
 	prefers_full_name = models.BooleanField(default=True)
-	llm_model = models.CharField(max_length=20, default="lumina")
+	llm_model = models.CharField(max_length=20, default="none")
 	llm_api_key = EncryptedTextField(blank=True, default="")
 	encrypted_notes = EncryptedTextField(blank=True, default="")
 
@@ -65,6 +65,7 @@ class UserImprovement(models.Model):
 	score_delta = models.IntegerField(default=0)
 	encrypted_note = EncryptedTextField(blank=True, default="")
 	created_at = models.DateTimeField(auto_now_add=True)
+
 
 
 class Invitation(models.Model):

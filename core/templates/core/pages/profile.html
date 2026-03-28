@@ -16,7 +16,7 @@
     </div>
     <nav class="space-y-1 text-sm">
       <a class="block rounded-r-xl px-4 py-3 text-on-surface-variant" href="/dashboard/">Overview</a>
-      <a class="block rounded-r-xl px-4 py-3 text-on-surface-variant" href="/course-path/">Vocabulary</a>
+      <a class="block rounded-r-xl px-4 py-3 text-on-surface-variant" href="{{ course_nav_url }}">Vocabulary</a>
       <a class="block rounded-r-xl px-4 py-3 text-on-surface-variant" href="/lesson/articles/">Practice</a>
       <a class="block translate-x-1 rounded-r-xl bg-surface-container-lowest px-4 py-3 font-bold text-primary" href="/profile/">Profile</a>
     </nav>
@@ -84,7 +84,7 @@
           <div class="space-y-2">
             <label for="llm_model" class="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">Preferred LLM</label>
             <select id="llm_model" name="llm_model" class="lumina-input">
-              <option value="lumina" {% if llm_form.llm_model.value == 'lumina' %}selected{% endif %}>Lumina</option>
+              <option value="none" {% if llm_form.llm_model.value == 'none' %}selected{% endif %}>None</option>
               <option value="chatgpt" {% if llm_form.llm_model.value == 'chatgpt' %}selected{% endif %}>ChatGPT</option>
               <option value="claude" {% if llm_form.llm_model.value == 'claude' %}selected{% endif %}>Claude</option>
             </select>
@@ -97,7 +97,7 @@
             {% if has_llm_api_key %}
               <p class="text-xs text-on-surface-variant">A key is already saved. Leave blank to keep the current key.</p>
             {% else %}
-              <p class="text-xs text-on-surface-variant">Required when ChatGPT or Claude is selected.</p>
+              <p class="text-xs text-on-surface-variant">Required when ChatGPT or Claude is selected. Use an OpenAI key starting with "sk-" or a Claude key starting with "sk-ant-".</p>
             {% endif %}
             {% if llm_form.api_key.errors %}<p class="text-xs text-error">{{ llm_form.api_key.errors.0 }}</p>{% endif %}
           </div>
@@ -115,12 +115,13 @@
   (function () {
     const modelSelect = document.getElementById('llm_model');
     const apiWrapper = document.getElementById('api-key-wrapper');
+    const hasSavedKey = {{ has_llm_api_key|yesno:"true,false" }};
     if (!modelSelect || !apiWrapper) {
       return;
     }
 
     function updateVisibility() {
-      const needsKey = modelSelect.value === 'chatgpt' || modelSelect.value === 'claude';
+      const needsKey = !hasSavedKey || modelSelect.value === 'chatgpt' || modelSelect.value === 'claude';
       apiWrapper.classList.toggle('hidden', !needsKey);
     }
 
